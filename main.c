@@ -17,19 +17,13 @@
 #include <time.h>
 
 #include "params.h"
-// #include "utilities.h"
 
 // jednotky pro specifikaci pravdepodobnosti genetickych operatoru:
 // 100 - procenta, 1000 - promile. NENI TREBA MENIT
 const UINT unit = 100;
-// delka chromozomu - s touto promennou pracuje GA
-const UINT glength = CHLEN;
-// maximalni fitness - zde odpovida delce jedince, protoze se pouze snazime
-// nalezt retezec se samymi 1 geny
-const double max_fit = CHLEN;
 
 #ifdef DEBUG
-const UINT generations = 5000000; // 0 - pocet generaci neni pri ladeni omezen
+const UINT generations = 100000; // 0 - pocet generaci neni pri ladeni omezen
 #else
 const UINT generations = GENERATIONS; // po tomto poctu je GA zastaven
 #endif
@@ -73,10 +67,11 @@ void evolve()
     pool1[i].evaluate = 1;
   }
   //------------------------------------------------------------------------------------------------------------------------
+  gprint(&pool1[1]);
   // print_array(pool1[1].routes[1].locations, pool1[1].routes[1].route_length);
   // swap_array_values(pool1[1].routes[1].locations, 2, 3);
   // print_array(pool1[1].routes[1].locations, pool1[1].routes[1].route_length);
-  // exit(0);
+  exit(0);
   //--------------------------------------------------------------------------------------------------------------------------
 
   // evolucni cyklus
@@ -365,7 +360,7 @@ void mutator_change_route_schedule(GA_chromosome *genome)
     v_size = genome->routes[vehicle].route_length;
   }
 
-  UINT index = urandom(1, v_size - 3);
+  UINT index = urandom(2, v_size - 3);
   UINT value = genome->routes[vehicle].locations[index];
 
   if (value % 2 == 0)

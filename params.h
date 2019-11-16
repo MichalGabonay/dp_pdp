@@ -46,6 +46,7 @@ typedef int BOOL;
 
 typedef struct {
     UINT locations[256];
+    UINT utilization[256];
     UINT route_length;
     UINT cost;
     UINT duration;

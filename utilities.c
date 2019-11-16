@@ -45,8 +45,8 @@ void read_dataset(Vector *locations_map, Vector *vehicles, UINT locations[RSIZ][
   while(fgets(line[line_index], LSIZ, fptr)) 
 	{
     // printf("line_index: %d\n", line_index);
-    if (line_index > 0)
-    {
+    // if (line_index > 0)
+    // {
       char* p = strtok(line[line_index], " \t\n\r");
       UINT int_value;
       h = 0;
@@ -57,7 +57,7 @@ void read_dataset(Vector *locations_map, Vector *vehicles, UINT locations[RSIZ][
         str2int(&int_value, p, 10);
         // if (line_index == 4)
         // {
-        //   printf(" %d: %s - %d\n", h, p, int_value);
+          // printf(" %d: %s - %d\n", h, p, int_value);
         // }
         
         if (line_index == 0)
@@ -85,7 +85,7 @@ void read_dataset(Vector *locations_map, Vector *vehicles, UINT locations[RSIZ][
       // printf("\n");
 
       
-    }
+    // }
       // if (line_index == 2)
       // {
       //   break;

@@ -12,32 +12,36 @@
   * ~~MUTATORS~~
     * ~~move between vehicles~~
     * ~~switch route schedule order~~
-  * add to git repository
+  * ~~add to git repository~~
   * ~~put it all togather into 1. functional version~~
 
 ---
 
 ## Phase 2 (improving) - 25.11.-2.12.
   * implement capacity restriction
-  * improve and add new mutator (mutation operator)
-  * improve fitness evaluation
   * improve initialization
+  * make GA params as program input args + script for auto run with multiple configurations (100x per config) + summarize output to CSV
+  * improve and add new mutators (mutation operator)
+  * improve fitness evaluation
+  * look at clustering of locations in dataset (think about using it somehow)
 
 ---
 
 ## Phase 3 (optimalization and flexin) - 16.12.-22.12.
-  * add diversity checker
+  * add diversity checker (saw-tooth)
+    * implement more sofisticated reproduction process
   * optimalization criterion by cost (weight/distance)
     * multicriterion ?
-  * generate program oputput report
   * optimize
   * clean code
   * corssover ?
+  * TW ?
 
 ---
 
 ## Phase 4 (finishing) - end of Jan - middle of Feb
+  * generate program oputput report
   * implement experiments with different GA settings
-  * finish - usable SW for master theses use (all other improve is just bonus)
+  * finish - usable SW for master thesis use (all other improve is just bonus)
   * TW ?
   * add another metaheuristic for improving algorithm ?
