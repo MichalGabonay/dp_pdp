@@ -1,54 +1,44 @@
-//////////////////////////////////////////////////////////////
-// VZOROVA IMPLEMENTACE JEDNODUCHEHO GENETICKEHO ALGORITMU  //
-// JAZYK C, PREKLAD S OHLEDEM NA NORMU C99                  //
-//                                                          //
-// (c) MICHAL BIDLO, 2011                                   //
-//                                                          //
-// POKUD NENI UVEDENO JINAK, TENTO KOD SMI BYT POUZIT       //
-// VYHRADNE PRO POTREBY RESENI PROJEKTU V PREDMETECH        //
-// BIOLOGII INSPIROVANE POCITACE, PRIPADNE                  //
-// APLIKOVANE EVOLUCNI ALGORITMY NA FIT VUT V BRNE.         //
-//////////////////////////////////////////////////////////////
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
 #include <time.h>
+#include <vector>
+#include <iostream>
 
 #include "params.h"
 
 // jednotky pro specifikaci pravdepodobnosti genetickych operatoru:
-// 100 - procenta, 1000 - promile. NENI TREBA MENIT
+// 100 - procenta, 1000 - promile.
 const UINT unit = 100;
 
 #ifdef DEBUG
-const UINT generations = 100000; // 0 - pocet generaci neni pri ladeni omezen
+const UINT generations = 500000; // 0 - pocet generaci neni omezen
 #else
 const UINT generations = GENERATIONS; // po tomto poctu je GA zastaven
 #endif
 
-UINT locations[RSIZ][9];
-Vector map_locations;
-Vector vehicles;
+int locations[RSIZ][9];
+std::vector<int> map_locations;
+std::vector<int> vehicles;
+UINT NUMBER_OF_VEHICLES;
+UINT CAPACITY_OF_VEHICLES;
 
-// !!!! nas GA pracuje pouze se sudymi pocty jedincu v populaci !!!!
 UINT _popsize = (POPSIZE & 1) ? POPSIZE + 1 : POPSIZE;
 
 // ------------------- implementace genetickeho algoritmu ----------------------
 // *****************************************************************************
 
-GA_chromosome best; // njelepsi dosud nalezene reseni
+GA_chromosome best; // najlepsi dosud nalezene reseni
 double best_ever;   // fitness dosud nejlepsiho jedince
 
 UINT generation; // pocitadlo generaci
 GA_chromosome *population;
 GA_chromosome *next_population;
-// pracovni populace - pouze sudy pocet jedincu !!!!
+// pracovni populace - parny pocet jedincov
 GA_chromosome pool1[(POPSIZE & 1) ? POPSIZE + 1 : POPSIZE];
 GA_chromosome pool2[(POPSIZE & 1) ? POPSIZE + 1 : POPSIZE];
 
-// evolucni cyklus SGA: nova populace o _popsize jedincich je tvorena krizenimi
 // a mutaci turnajem vybranych jedincu predchazejici generace.
 void evolve()
 {
@@ -66,12 +56,18 @@ void evolve()
     initialize(&pool1[i]);
     pool1[i].evaluate = 1;
   }
+  // gprint(&pool1[1]);
+  // for (int i = 0; i < RSIZ; i++)
+  // {
+  //   printf("%d: %d\n", i, pool1[1].map_route_position[i]);
+  // }
+  // return;
   //------------------------------------------------------------------------------------------------------------------------
-  gprint(&pool1[1]);
-  // print_array(pool1[1].routes[1].locations, pool1[1].routes[1].route_length);
-  // swap_array_values(pool1[1].routes[1].locations, 2, 3);
-  // print_array(pool1[1].routes[1].locations, pool1[1].routes[1].route_length);
-  exit(0);
+  // gprint(&pool1[1]);
+  // printArray(pool1[1].routes[1].locations, pool1[1].routes[1].route_length);
+  // swapArrayValues(pool1[1].routes[1].locations, 2, 3);
+  // printArray(pool1[1].routes[1].locations, pool1[1].routes[1].route_length);
+  // exit(0);
   //--------------------------------------------------------------------------------------------------------------------------
 
   // evolucni cyklus
@@ -145,7 +141,7 @@ UINT urandom(UINT low, UINT high)
   return rand() % (high - low + 1) + low;
 }
 
-// vypis chromozomu - ZMENTE SI DLE POTREBY
+// vypis chromozomu
 void gprint(GA_chromosome *genome)
 {
   UINT used_vehicles = 0;
@@ -159,11 +155,11 @@ void gprint(GA_chromosome *genome)
       {
         if (j != genome->routes[i].route_length - 1)
         {
-          printf("%d, ", genome->routes[i].locations[j]);
+          printf("%d[%d], ", genome->routes[i].locations[j], genome->routes[i].utilization[j]);
         }
         else
         {
-          printf("%d", genome->routes[i].locations[j]);
+          printf("%d[%d]", genome->routes[i].locations[j], genome->routes[i].utilization[j]);
         }
       }
       printf("\n");
@@ -174,30 +170,54 @@ void gprint(GA_chromosome *genome)
   printf("TOTAL DISTANCE: %f, USED VEHICLES: %d\n", 1 / genome->fitness, used_vehicles);
 }
 
-// inicializace populace nahodne - ZMENTE SI DLE POTREBY
+// random initialization of population
 void initialize(GA_chromosome *genome)
 {
+  // genome = malloc( sizeof(*genome) + sizeof(Route [NUMBER_OF_VEHICLES]));
   for (size_t i = 0; i < NUMBER_OF_VEHICLES; i++)
   {
-    genome->routes[i].locations[0] = 0;
+    Route route;
+    route.cost = 0;
+    route.distance = 0;
+    route.duration = 0;
+    route.route_length = 0;
+    genome->routes.push_back(route);
+    // genome->routes[i].locations[0] = 0;
+    genome->routes[i].locations.push_back(0);
+    // genome->routes[i].utilization[0] = 0;
+    genome->routes[i].utilization.push_back(0);
     genome->routes[i].route_length = 1;
   }
-  for (size_t i = 1; i < size(&map_locations); i += 2)
+  for (UINT i = 1; i < map_locations.size(); i += 2)
   {
     UINT vehicle = urandom(0, NUMBER_OF_VEHICLES - 1);
     UINT next = genome->routes[vehicle].route_length;
-    genome->routes[vehicle].locations[next] = i;
-    genome->routes[vehicle].locations[next + 1] = i + 1;
+
+    // genome->routes[vehicle].locations[next] = i;
+    genome->routes[vehicle].locations.push_back(i);
+    // genome->routes[vehicle].utilization[next] = genome->routes[vehicle].utilization[next - 1] + locations[map_locations[i]][3];
+    genome->routes[vehicle].utilization.push_back(genome->routes[vehicle].utilization[next - 1] + locations[map_locations[i]][3]);
+    genome->map_route_position[i] = next;
+
+    // genome->routes[vehicle].locations[next + 1] = i + 1;
+    genome->routes[vehicle].locations.push_back(i + 1);
+    // genome->routes[vehicle].utilization[next + 1] = genome->routes[vehicle].utilization[next] + locations[map_locations[i + 1]][3];
+    genome->routes[vehicle].utilization.push_back(genome->routes[vehicle].utilization[next] + locations[map_locations[i + 1]][3]);
+    genome->map_route_position[i + 1] = next + 1;
+
     genome->routes[vehicle].route_length += 2;
   }
   for (size_t i = 0; i < NUMBER_OF_VEHICLES; i++)
   {
-    genome->routes[i].locations[genome->routes[i].route_length] = 0;
+    // genome->routes[i].locations[genome->routes[i].route_length] = 0;
+    genome->routes[i].locations.push_back(0);
+    // genome->routes[i].utilization[genome->routes[i].route_length] = 0;
+    genome->routes[i].utilization.push_back(0);
     genome->routes[i].route_length++;
   }
 }
 
-// mutace - ZMENTE SI DLE POTREBY. je vsak treba zachovat navratovou hodnotu!
+// mutace
 BOOL mutator(GA_chromosome *genome, UINT _pmut)
 {
   if (urandom(0, unit) <= _pmut) // mutace s pravdepodobnosti _pmut
@@ -207,10 +227,10 @@ BOOL mutator(GA_chromosome *genome, UINT _pmut)
       switch (urandom(1, NUMBER_OF_MUTATORS))
       {
       case 1:
-        mutator_move_between_vehicles(genome);
+        mutatorMoveBetweenVehicles(genome);
         break;
       case 2:
-        mutator_change_route_schedule(genome);
+          mutatorChangeRouteSchedule(genome);
         break;
       default:
         break;
@@ -223,7 +243,7 @@ BOOL mutator(GA_chromosome *genome, UINT _pmut)
   return 0; // ...jinak vracim false
 }
 
-// test na zastaveni evoluce - V PRIPADE POTREBY ZMENTE
+// test na zastaveni evoluce
 BOOL stop()
 {
   if (best.fitness > best_ever)
@@ -245,13 +265,12 @@ BOOL stop()
   return 0;
 }
 
-// evaluace fitness pro zadaneho jedince - ZMENTE PRO RESENI SVEHO PROBLEMU
+// evaluace fitness pro zadaneho jedince
 double fitness(GA_chromosome *genome)
 {
   // gprint(genome);
   double total_distance = 0;
   double total_route_distance;
-  UINT fit = 0.0;
 
   for (UINT i = 0; i < NUMBER_OF_VEHICLES; i++)
   {
@@ -260,14 +279,14 @@ double fitness(GA_chromosome *genome)
     {
       UINT loc_o = genome->routes[i].locations[j];
       UINT loc_d = genome->routes[i].locations[j + 1];
-      // printf("j=%d(%d): loc_o: %d, loc_d: %d, l: %d\n", (int)j, genome->routes[i].route_length, loc_o, loc_d, get(&map_locations, loc_o));
+      // printf("j=%d(%d): loc_o: %d, loc_d: %d, l: %d\n", (int)j, genome->routes[i].route_length, loc_o, loc_d, map_locations[loc_o]);
 
-      UINT origin_x = locations[get(&map_locations, loc_o)][1];
-      UINT origin_y = locations[get(&map_locations, loc_o)][2];
-      UINT destination_x = locations[get(&map_locations, loc_d)][1];
-      UINT destination_y = locations[get(&map_locations, loc_d)][2];
+      int origin_x = locations[map_locations[loc_o]][1];
+      int origin_y = locations[map_locations[loc_o]][2];
+      int destination_x = locations[map_locations[loc_d]][1];
+      int destination_y = locations[map_locations[loc_d]][2];
       // printf("origin_x:%d, origin_y:%d, destination_x:%d, destination_y:%d\n", origin_x, origin_y, destination_x, destination_y);
-      total_route_distance += calculate_distance_between_points(
+      total_route_distance += calculateDistanceBetweenPoints(
           origin_x, origin_y, destination_x, destination_y);
     }
 
@@ -278,12 +297,12 @@ double fitness(GA_chromosome *genome)
   return 1 / total_distance;
 }
 
-void mutator_move_between_vehicles(GA_chromosome *genome)
+void mutatorMoveBetweenVehicles(GA_chromosome *genome)
 {
-  UINT pickup, delivery, index_2, index_new, vehicle_1;
+  UINT pickup, delivery, index_2, vehicle_1;
   UINT v_1_size = 0;
 
-  while (v_1_size == 0)
+  while (v_1_size <= 2)
   {
     vehicle_1 = urandom(0, NUMBER_OF_VEHICLES - 1);
     v_1_size = genome->routes[vehicle_1].route_length;
@@ -297,60 +316,67 @@ void mutator_move_between_vehicles(GA_chromosome *genome)
 
   UINT v_2_size = genome->routes[vehicle_2].route_length;
 
-  if (v_1_size == 2)
-  {
-    // printf("Empty vehicle 1\n");
-    return;
-  }
-
   //------------------------------------------------------------------------------------------------------
   // printf("OLD:\n");
-  // print_array(genome->routes[vehicle_1].locations, genome->routes[vehicle_1].route_length);
-  // print_array(genome->routes[vehicle_2].locations, genome->routes[vehicle_2].route_length);
+  // printArray(genome->routes[vehicle_1].locations, genome->routes[vehicle_1].route_length);
+  // printArray(genome->routes[vehicle_2].locations, genome->routes[vehicle_2].route_length);
   //------------------------------------------------------------------------------------------------------
 
   UINT index_1 = urandom(1, v_1_size - 2);
   UINT value = genome->routes[vehicle_1].locations[index_1];
-  if (value == 0)
-  {
-    return;
-  }
 
-  // printf("1: vehicle_1: %d  --  vehicle_2: %d  --  index_1: %d  --  value: %d\n", vehicle_1, vehicle_2, index_1, value);
   if (value % 2 == 0)
   {
     pickup = value - 1;
     delivery = value;
-    index_2 = find_value_in_array(genome->routes[vehicle_1].locations, genome->routes[vehicle_1].route_length, value - 1);
-    delete_from_array(genome->routes[vehicle_1].locations, genome->routes[vehicle_1].route_length, index_1);
-    genome->routes[vehicle_1].route_length--;
-    delete_from_array(genome->routes[vehicle_1].locations, genome->routes[vehicle_1].route_length, index_2);
-    genome->routes[vehicle_1].route_length--;
+    index_2 = genome->map_route_position[pickup];
+    deleteFromRoute(genome, vehicle_1, index_1, locations[map_locations[delivery]]);
+    deleteFromRoute(genome, vehicle_1, index_2, locations[map_locations[pickup]]);
+    // index_2 = findValueInArray(genome->routes[vehicle_1].locations, genome->routes[vehicle_1].route_length, pickup);
+    // deleteFromArray(genome->routes[vehicle_1].locations, genome->routes[vehicle_1].route_length, index_1, 0);
+    // deleteFromArray(genome->routes[vehicle_1].utilization, genome->routes[vehicle_1].route_length, index_1, locations[map_locations[delivery]][3]);
+    // genome->routes[vehicle_1].route_length--;
+    // deleteFromArray(genome->routes[vehicle_1].locations, genome->routes[vehicle_1].route_length, index_2, 0);
+    // deleteFromArray(genome->routes[vehicle_1].utilization, genome->routes[vehicle_1].route_length, index_2, locations[map_locations[pickup]][3]);
+    // genome->routes[vehicle_1].route_length--;
   }
   else
   {
     pickup = value;
     delivery = value + 1;
-    index_2 = find_value_in_array(genome->routes[vehicle_1].locations, genome->routes[vehicle_1].route_length, value + 1);
-    delete_from_array(genome->routes[vehicle_1].locations, genome->routes[vehicle_1].route_length, index_2);
-    genome->routes[vehicle_1].route_length--;
-    delete_from_array(genome->routes[vehicle_1].locations, genome->routes[vehicle_1].route_length, index_1);
-    genome->routes[vehicle_1].route_length--;
+    index_2 = genome->map_route_position[delivery];
+    deleteFromRoute(genome, vehicle_1, index_2, locations[map_locations[delivery]]);
+    deleteFromRoute(genome, vehicle_1, index_1, locations[map_locations[pickup]]);
+    // index_2 = findValueInArray(genome->routes[vehicle_1].locations, genome->routes[vehicle_1].route_length, value + 1);
+    // deleteFromArray(genome->routes[vehicle_1].locations, genome->routes[vehicle_1].route_length, index_2, 0);
+    // deleteFromArray(genome->routes[vehicle_1].utilization, genome->routes[vehicle_1].route_length, index_2, locations[map_locations[pickup]][3]);
+    // genome->routes[vehicle_1].route_length--;
+    // deleteFromArray(genome->routes[vehicle_1].locations, genome->routes[vehicle_1].route_length, index_1, 0);
+    // deleteFromArray(genome->routes[vehicle_1].utilization, genome->routes[vehicle_1].route_length, index_1, locations[map_locations[delivery]][3]);
+    // genome->routes[vehicle_1].route_length--;
   }
+  UINT random_index = urandom(1, v_2_size - 1);
+  insertToRoute(genome, vehicle_2, random_index, pickup, locations[map_locations[pickup]]);
+  insertToRoute(genome, vehicle_2, random_index + 1, delivery, locations[map_locations[delivery]]);
 
-  genome->routes[vehicle_2].locations[v_2_size - 1] = pickup;
-  genome->routes[vehicle_2].locations[v_2_size] = delivery;
-  genome->routes[vehicle_2].locations[v_2_size + 1] = 0;
-  genome->routes[vehicle_2].route_length += 2;
+  // genome->routes[vehicle_2].locations[v_2_size - 1] = pickup;
+  // genome->routes[vehicle_2].locations[v_2_size] = delivery;
+  // genome->routes[vehicle_2].locations[v_2_size + 1] = 0;
+
+  // genome->routes[vehicle_2].utilization[v_2_size - 1] = locations[map_locations[pickup]][3];
+  // genome->routes[vehicle_2].utilization[v_2_size] = 0;
+  // genome->routes[vehicle_2].utilization[v_2_size + 1] = 0;
+  
+  // genome->routes[vehicle_2].route_length += 2;
 
   //------------------------------------------------------------------------------------------------------
   // printf("NEW:\n");
-  // print_array(genome->routes[vehicle_1].locations, genome->routes[vehicle_1].route_length);
-  // print_array(genome->routes[vehicle_2].locations, genome->routes[vehicle_2].route_length);
+  // printArray(genome->routes[vehicle_1].locations, genome->routes[vehicle_1].route_length);
+  // printArray(genome->routes[vehicle_2].locations, genome->routes[vehicle_2].route_length);
   //------------------------------------------------------------------------------------------------------
 }
 
-void mutator_change_route_schedule(GA_chromosome *genome)
+void mutatorChangeRouteSchedule(GA_chromosome *genome)
 {
   UINT vehicle;
   UINT v_size = 0;
@@ -365,24 +391,32 @@ void mutator_change_route_schedule(GA_chromosome *genome)
 
   if (value % 2 == 0)
   {
-    swap_array_values(genome->routes[vehicle].locations, index, index + 1);
+    swapArrayValues(&genome->routes[vehicle].locations, index, index + 1);
+    UINT value_of_switched = genome->routes[vehicle].locations[index];
+    genome->routes[vehicle].utilization[index] = genome->routes[vehicle].utilization[index - 1] + locations[map_locations[value_of_switched]][3];
+    genome->map_route_position[value]++;
+    genome->map_route_position[value_of_switched]--;
   }
   else
   {
-    swap_array_values(genome->routes[vehicle].locations, index, index - 1);
+    swapArrayValues(&genome->routes[vehicle].locations, index, index - 1);
+    UINT value_of_switched = genome->routes[vehicle].locations[index];
+    genome->routes[vehicle].utilization[index - 1] = genome->routes[vehicle].utilization[index - 2] + locations[map_locations[value]][3];
+    genome->map_route_position[value]--;
+    genome->map_route_position[value_of_switched]++;
   }
 }
 
 // *****************************************************************************
-// ------------------------------ hlavni program -------------------------------
-
-int main(int argc, char *argv[])
+// ------------------------------ main program -------------------------------
+int main()
 {
-  init(&map_locations);
-  init(&vehicles);
-  read_dataset(&map_locations, &vehicles, locations);
 
-  srand(time(0)); // random seed - NUTNE
+  readDataset(&map_locations, &vehicles, locations);
+  NUMBER_OF_VEHICLES = vehicles[0];
+  CAPACITY_OF_VEHICLES = vehicles[1];
+
+  srand(time(0)); // random seed
   evolve();
 
   return 0;

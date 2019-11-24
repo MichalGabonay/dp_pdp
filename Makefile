@@ -1,9 +1,18 @@
-all:	*.c *.h
-	gcc -std=c99 -ggdb3 -o evol1 main.c vector.c utilities.c -lm
+CXX ?= g++
+CXXFLAGS = -std=c++11 -Wall -Wextra -g
+
+vrp: main.o utilities.o
+	$(CXX) $(CXXFLAGS) main.o utilities.o -o vrp
 	rm -f *.o
 
+main.o: main.cpp
+	$(CXX) $(CXXFLAGS) -c main.cpp
+
+utilities.o: utilities.cpp
+	$(CXX) $(CXXFLAGS) -c utilities.cpp
+
 run:
-	./evol1
+	./vrp
 
 clean:
-	rm -f evol1
+	rm -f vrp

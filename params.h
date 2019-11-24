@@ -1,28 +1,16 @@
-//////////////////////////////////////////////////////////////
-// VZOROVA IMPLEMENTACE JEDNODUCHEHO GENETICKEHO ALGORITMU  //
-// JAZYK C, PREKLAD S OHLEDEM NA NORMU C99                  //
-//                                                          //
-// (c) MICHAL BIDLO, 2011                                   //
-//                                                          //
-// POKUD NENI UVEDENO JINAK, TENTO KOD SMI BYT POUZIT       //
-// VYHRADNE PRO POTREBY RESENI PROJEKTU V PREDMETECH        //
-// BIOLOGII INSPIROVANE POCITACE, PRIPADNE                  //
-// APLIKOVANE EVOLUCNI ALGORITMY NA FIT VUT V BRNE.         //
-//////////////////////////////////////////////////////////////
-// #include "vector.h"
 #include "utilities.h"
 
 #ifndef PARAMS_H
 #define PARAMS_H
 
-// pro vypis prubehu evoluce na stdout, jinak zakomentujte
+// pro vypis prubehu evoluce na stdout
 #define DEBUG
 
 //----------------------- parametry genetickeho algoritmu ----------------------
 // pravdepodobnost mutace
 #define PMUT 70
 // pocet mutovanych genu v chromozomu
-#define MUTAGENES 10
+#define MUTAGENES 5
 // pravdepodobnost krizeni
 #define PCROSS 70
 // pocet jedincu v turnajove selekce
@@ -38,26 +26,31 @@
 //------------------------------------------------------------------------------
 
 //------------------------------- VRP parameters -------------------------------
-#define NUMBER_OF_VEHICLES 25
+#define VEHICLES_BUFFER 64
+#define LOCATIONS_BUFFER 256
 //------------------------------------------------------------------------------
 
 typedef unsigned int UINT;
 typedef int BOOL;
 
 typedef struct {
-    UINT locations[256];
-    UINT utilization[256];
+    // UINT locations[LOCATIONS_BUFFER];
+    std::vector<UINT> locations;
+    // int utilization[LOCATIONS_BUFFER];
+    std::vector<int> utilization;
     UINT route_length;
     UINT cost;
     UINT duration;
     UINT distance;
 } Route;
 
-// definice typu chromozomu GA - UPRAVTE SI DLE POTREBY
+// definice typu chromozomu GA
 typedef struct {
-    Route routes[NUMBER_OF_VEHICLES];  // vlastni napln chromozomu
     double fitness;   // fitness daneho jedince
-    BOOL evaluate;  // zda je treba znovu vyhodnotit fitness
+    BOOL evaluate;  // ci je treba znovu vyhodnotit fitness
+    // Route routes[VEHICLES_BUFFER];
+    std::vector<Route> routes;
+    UINT map_route_position[RSIZ];
 } GA_chromosome;
 
 // prototypy funkci pro GA
@@ -71,7 +64,10 @@ double fitness(GA_chromosome *genome);
 void gprint(GA_chromosome *genome);
 void evolve();
 BOOL stop();
-void mutator_move_between_vehicles(GA_chromosome *genome);
-void mutator_change_route_schedule(GA_chromosome *genome);
+void mutatorMoveBetweenVehicles(GA_chromosome *genome);
+void mutatorChangeRouteSchedule(GA_chromosome *genome);
+
+void insertToRoute (GA_chromosome *g, UINT vehicle, UINT index, UINT value, int *location);
+void deleteFromRoute (GA_chromosome *g, UINT vehicle, UINT index, int *location);
 
 #endif
