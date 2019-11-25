@@ -7,7 +7,9 @@
 #include <limits.h>
 #include <math.h>
 #include <vector>
-
+#include <sstream>
+#include <fstream>
+#include <string>
 
 typedef enum {
     STR2INT_SUCCESS,
@@ -35,112 +37,51 @@ str2int_errno str2int(int *out, char *s, UINT base) {
     return STR2INT_SUCCESS;
 }
 
-void readDataset(std::vector<int> *locations_map, std::vector<int> *vehicles, int locations[RSIZ][9]){
-  char line[RSIZ][LSIZ];
+void readDataset(std::vector<int> *locations_map, std::vector<int> *vehicles, std::vector<std::vector<int>> *locations){
 
-  FILE *fptr = NULL; 
+  std::ifstream file("lc101.txt");
   UINT line_index = 0;
-  char const *fname = "lc101.txt";
+  std::string line;
+  std::string partial;
 
-  UINT h = 0;
-  fptr = fopen(fname, "r");
-  while(fgets(line[line_index], LSIZ, fptr)) 
-	{
-    // printf("line_index: %d\n", line_index);
-    // if (line_index > 0)
-    // {
-      char* p = strtok(line[line_index], " \t\n\r");
-      int int_value;
-      h = 0;
-      // init(&locations[line_index - 1]);
-      while(p)
-      {
-        int_value = 0;
-        str2int(&int_value, p, 10);
-        // if (line_index == 4)
-        // {
-          // printf(" %d: %s - %d\n", h, p, int_value);
-        // }
-        
-        if (line_index == 0)
-        {
-          vehicles->push_back(int_value);
-        } else {
-          // printf("h: %d  --  int_value: %d\n", h, int_value);
-          // append(&locations[line_index - 1], int_value);
-          locations[line_index - 1][h] = int_value;
-          // print_vector(&locations[line_index - 1]);
-        }
-        
-        p = strtok(NULL, " \t\n\r");
-        h++;
-      }
+  std::vector<int> tokens;
 
-      // for (UINT i = 0; i < h; i++)
-      // {
-      //   printf("%d", locations[line_index - 1][i]);
-      //   if (i != h - 1)
-      //   {
-      //     printf(", ");
-      //   }
-      // }
-      // printf("\n");
+  while(std::getline(file, line)) {
 
-      
-    // }
-      // if (line_index == 2)
-      // {
-      //   break;
-      // }
-    
+    std::istringstream iss(line);
+    std::string token;
+    while(std::getline(iss, token, '\t')) {
+      tokens.push_back(std::stoi( token ));
+    }
+    if (line_index == 0)
+    {
+      for (UINT i=0; i<tokens.size(); i++) 
+        vehicles->push_back(tokens[i]); 
+    } else {
+      locations->push_back(tokens);
+    }
+    tokens.clear();
     line_index++;
   }
-  fclose(fptr);
+
+  file.close();
 
   for (UINT i = 0; i < line_index - 1; i++)
   {
-    // for (size_t j = 0; j < 9; j++)
-    // {
-    //   printf("%d, ", locations[i][j]);
-    // }
-    // printf("\n");
     if (i == 0)
     {
       locations_map->push_back(0);
     }
-    // printf("%d - ", locations[i][9]);
-    if (locations[i][8] != 0)
+    if (locations->at(i)[8] != 0)
     {
-      // print_vector(&locations[i]);
       locations_map->push_back(i);
-      locations_map->push_back(locations[i][8]);
+      locations_map->push_back(locations->at(i)[8]);
     }
   }
 }
 
 double calculateDistanceBetweenPoints(int x1, int y1, int x2, int y2) {
   return( hypot(x1 - x2, y1 - y2) );
-}
-
-void deleteFromArray(UINT *array, UINT array_size, UINT index, int value_of_index) {
-  for(UINT i = index; i < array_size - 1; i++){
-    if (value_of_index == 0)
-    {
-      array[i] = array[i + 1];
-    } else {
-      array[i] = array[i + 1] - value_of_index;
-    }
-  }
-}
-
-int findValueInArray(UINT *array, UINT array_size, UINT value){
-    for(UINT i = 0; i < array_size; i++){
-        if(array[i] == value){
-            return i;
-        }
-    }
-
-    return -1;
 }
 
 void swapArrayValues(std::vector<UINT> *locations, UINT position1, UINT position2) {
@@ -164,7 +105,7 @@ void printArray(UINT *array, UINT array_size) {
     printf("\n");
 }
 
-void insertToRoute (GA_chromosome *g, UINT vehicle, UINT index, UINT value, int *location) {
+void insertToRoute (GA_chromosome *g, UINT vehicle, UINT index, UINT value, std::vector<int> location) {
   UINT route_size = g->routes[vehicle].route_length;
   
   for (size_t i = route_size - 1; i >= index; i--)
@@ -188,7 +129,7 @@ void insertToRoute (GA_chromosome *g, UINT vehicle, UINT index, UINT value, int 
   g->routes[vehicle].route_length++;
 }
 
-void deleteFromRoute (GA_chromosome *g, UINT vehicle, UINT index, int *location) {
+void deleteFromRoute (GA_chromosome *g, UINT vehicle, UINT index, std::vector<int> location) {
   UINT route_size = g->routes[vehicle].route_length;
   
   for (size_t i = index; i < route_size - 1; i++)

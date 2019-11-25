@@ -12,31 +12,22 @@
 // pocet mutovanych genu v chromozomu
 #define MUTAGENES 5
 // pravdepodobnost krizeni
-#define PCROSS 70
+// #define PCROSS 70
 // pocet jedincu v turnajove selekce
 #define TOUR 4
 // velikost populace
 #define POPSIZE 15
 // maximalni pocet generaci
 #define GENERATIONS 2000000
-// delka chromozomu
-#define CHLEN 1000
 // number of mutation operators
 #define NUMBER_OF_MUTATORS 2
-//------------------------------------------------------------------------------
-
-//------------------------------- VRP parameters -------------------------------
-#define VEHICLES_BUFFER 64
-#define LOCATIONS_BUFFER 256
 //------------------------------------------------------------------------------
 
 typedef unsigned int UINT;
 typedef int BOOL;
 
 typedef struct {
-    // UINT locations[LOCATIONS_BUFFER];
     std::vector<UINT> locations;
-    // int utilization[LOCATIONS_BUFFER];
     std::vector<int> utilization;
     UINT route_length;
     UINT cost;
@@ -48,9 +39,8 @@ typedef struct {
 typedef struct {
     double fitness;   // fitness daneho jedince
     BOOL evaluate;  // ci je treba znovu vyhodnotit fitness
-    // Route routes[VEHICLES_BUFFER];
     std::vector<Route> routes;
-    UINT map_route_position[RSIZ];
+    std::vector<UINT> map_route_position;
 } GA_chromosome;
 
 // prototypy funkci pro GA
@@ -67,7 +57,7 @@ BOOL stop();
 void mutatorMoveBetweenVehicles(GA_chromosome *genome);
 void mutatorChangeRouteSchedule(GA_chromosome *genome);
 
-void insertToRoute (GA_chromosome *g, UINT vehicle, UINT index, UINT value, int *location);
-void deleteFromRoute (GA_chromosome *g, UINT vehicle, UINT index, int *location);
+void insertToRoute (GA_chromosome *g, UINT vehicle, UINT index, UINT value, std::vector<int> location);
+void deleteFromRoute (GA_chromosome *g, UINT vehicle, UINT index, std::vector<int> location);
 
 #endif

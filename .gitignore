@@ -1,6 +1,7 @@
 /.idea
 /.vscode
 
-evol1
+vrp
 valgrind-out.txt
 results.txt
+*.o
