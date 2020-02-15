@@ -4,11 +4,11 @@
 #define PARAMS_H
 
 // pro vypis prubehu evoluce na stdout
-#define DEBUG
+// #define DEBUG
 
 //----------------------- parametry genetickeho algoritmu ----------------------
 // pravdepodobnost mutace
-#define PMUT 70
+#define PMUT 60
 // pocet mutovanych genu v chromozomu
 #define MUTAGENES 5
 // pravdepodobnost krizeni
@@ -57,7 +57,10 @@ BOOL stop();
 void mutatorMoveBetweenVehicles(GA_chromosome *genome);
 void mutatorChangeRouteSchedule(GA_chromosome *genome);
 
-void insertToRoute (GA_chromosome *g, UINT vehicle, UINT index, UINT value, std::vector<int> location);
+void swapNeighborsInRoute (GA_chromosome *g, UINT vehicle, UINT vehicle_capacity, std::vector<std::vector<int>> &locations, std::vector<int> &map_locations);
+UINT insertToRoute (GA_chromosome *g, UINT vehicle, UINT index, UINT value, std::vector<int> location, UINT vehicle_capacity);
 void deleteFromRoute (GA_chromosome *g, UINT vehicle, UINT index, std::vector<int> location);
+
+void printProgramReport (GA_chromosome *best, float computed_time);
 
 #endif

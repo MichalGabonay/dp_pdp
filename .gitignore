@@ -2,6 +2,7 @@
 /.vscode
 
 vrp
-valgrind-out.txt
-results.txt
-*.o
+*.txt
+*.csv
+/objs/*.o
+MakefileOLD

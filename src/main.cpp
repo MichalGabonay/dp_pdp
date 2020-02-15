@@ -5,18 +5,30 @@
 #include <time.h>
 #include <vector>
 #include <iostream>
+#include <fstream>
+#include <chrono>
 
 #include "params.h"
+
+bool CONFIG_DEBUG = false;
+int CONFIG_PMUT = 60;
+int CONFIG_MUTAGENES = 5;
+int CONFIG_TOUR = 4;
+int CONFIG_POPSIZE = 16;
+int CONFIG_GENERATIONS = 2000000;
+std::string INPUT_FILE = "dataset/lc101.txt";
+std::chrono::_V2::system_clock::time_point time_beggining;
+std::chrono::_V2::system_clock::time_point time_end;
 
 // jednotky pro specifikaci pravdepodobnosti genetickych operatoru:
 // 100 - procenta, 1000 - promile.
 const UINT unit = 100;
 
-#ifdef DEBUG
-const UINT generations = 500000; // 0 - pocet generaci neni omezen
-#else
-const UINT generations = GENERATIONS; // po tomto poctu je GA zastaven
-#endif
+// #ifdef DEBUG
+// int generations = CONFIG_GENERATIONS; // 0 - pocet generaci neni omezen
+// #else
+// int generations = CONFIG_GENERATIONS; // po tomto poctu je GA zastaven
+// #endif
 
 std::vector<std::vector<int>> locations;
 std::vector<int> map_locations;
@@ -24,7 +36,7 @@ std::vector<int> vehicles;
 UINT NUMBER_OF_VEHICLES;
 UINT CAPACITY_OF_VEHICLES;
 
-UINT _popsize = (POPSIZE & 1) ? POPSIZE + 1 : POPSIZE;
+int _popsize = CONFIG_POPSIZE;
 
 // ------------------- implementace genetickeho algoritmu ----------------------
 // *****************************************************************************
@@ -32,7 +44,7 @@ UINT _popsize = (POPSIZE & 1) ? POPSIZE + 1 : POPSIZE;
 GA_chromosome best; // najlepsi dosud nalezene reseni
 double best_ever;   // fitness dosud nejlepsiho jedince
 
-UINT generation; // pocitadlo generaci
+int generation; // pocitadlo generaci
 GA_chromosome *population;
 GA_chromosome *next_population;
 // pracovni populace - parny pocet jedincov
@@ -42,28 +54,25 @@ GA_chromosome *pool2;
 // a mutaci turnajem vybranych jedincu predchazejici generace.
 void evolve()
 {
-  pool1 = (GA_chromosome*) calloc (_popsize,sizeof(GA_chromosome));
-  pool2 = (GA_chromosome*) calloc (_popsize,sizeof(GA_chromosome));
+  pool1 = (GA_chromosome *)calloc(_popsize, sizeof(GA_chromosome));
+  pool2 = (GA_chromosome *)calloc(_popsize, sizeof(GA_chromosome));
   // inicializace promennych
   generation = 0;
   best.fitness = 0.0;
   best_ever = 0.0;
   GA_chromosome ind1_new, ind2_new;
-  UINT _tour = (TOUR >= 2 ? TOUR : 2);
+  int _tour = (CONFIG_TOUR >= 2 ? CONFIG_TOUR : 2);
   UINT i1;
 
   // inicializace populace
-  for (UINT i = 0; i < _popsize; i++)
+  for (int i = 0; i < _popsize; i++)
   {
     initialize(&pool1[i]);
     pool1[i].evaluate = 1;
   }
 
   //------------------------------------------------------------------------------------------------------------------------
-  // gprint(&pool1[1]);
-  // printArray(pool1[1].routes[1].locations, pool1[1].routes[1].route_length);
-  // swapArrayValues(pool1[1].routes[1].locations, 2, 3);
-  // printArray(pool1[1].routes[1].locations, pool1[1].routes[1].route_length);
+  // mutatorChangeRouteSchedule(&pool1[1]);
   // exit(0);
   //--------------------------------------------------------------------------------------------------------------------------
 
@@ -82,7 +91,7 @@ void evolve()
       next_population = pool1;
     }
     // ohodnoceni populace
-    for (UINT i = 0; i < _popsize; i++)
+    for (int i = 0; i < _popsize; i++)
     {
       if (population[i].evaluate)
       {
@@ -93,17 +102,18 @@ void evolve()
         population[i].evaluate = 0;
       }
     }
+
     // elitizmus
     next_population[0] = best; // dosud nejlepsi nalezeny jedinec...
     GA_chromosome mutant = best;
     mutator(&mutant, unit);
     next_population[1] = mutant; // ...a mutant nejlepsiho
-    // tvorba nove populace
-    for (UINT i = 2; i < _popsize; i += 2)
+                                 // tvorba nove populace
+    for (int i = 2; i < _popsize; i += 2)
     {
       GA_chromosome *ind1 = NULL, *ind2 = NULL;
       // turnajovy vyber jedincu
-      for (UINT t = 0; t < _tour; t++)
+      for (int t = 0; t < _tour; t++)
       {
         i1 = urandom(0, _popsize - 1);
         if (ind1 == NULL)
@@ -118,9 +128,9 @@ void evolve()
       ind1_new = *ind1;
       ind2_new = *ind2;
       // mutace
-      if (mutator(&ind1_new, PMUT))
+      if (mutator(&ind1_new, CONFIG_PMUT))
         ind1_new.evaluate = 1;
-      if (mutator(&ind2_new, PMUT))
+      if (mutator(&ind2_new, CONFIG_PMUT))
         ind2_new.evaluate = 1;
       // umisteni potomku do nove populace
       next_population[i] = ind1_new;
@@ -211,7 +221,7 @@ BOOL mutator(GA_chromosome *genome, UINT _pmut)
 {
   if (urandom(0, unit) <= _pmut) // mutace s pravdepodobnosti _pmut
   {
-    for (UINT i = 0; i < MUTAGENES; i++)
+    for (int i = 0; i < CONFIG_MUTAGENES; i++)
     {
       switch (urandom(1, NUMBER_OF_MUTATORS))
       {
@@ -219,13 +229,12 @@ BOOL mutator(GA_chromosome *genome, UINT _pmut)
         mutatorMoveBetweenVehicles(genome);
         break;
       case 2:
-          mutatorChangeRouteSchedule(genome);
+        mutatorChangeRouteSchedule(genome);
         break;
       default:
         break;
       }
     }
-
     return 1; // probehla-li mutace, vratim true...
   }
 
@@ -238,16 +247,37 @@ BOOL stop()
   if (best.fitness > best_ever)
   {
     best_ever = best.fitness;
-#ifdef DEBUG
-    printf("Fitness = %f | Total distance = %.2f  in generation %d\n", best_ever, 1 / best_ever, generation);
-//        gprint(&best);
-#endif
+    // #ifdef DEBUG
+    if (CONFIG_DEBUG)
+    {
+      printf("Fitness = %f | Total distance = %.2f  in generation %d\n", best_ever, 1 / best_ever, generation);
+    }
+    // #endif
   }
 
-  if (generations > 0 && generation == generations)
+  if (CONFIG_GENERATIONS > 0 && generation == CONFIG_GENERATIONS)
   {
-    printf("END; generation=%d\n", generation);
-    gprint(&best);
+    time_end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(time_end - time_beggining).count();
+    duration = duration / 1000; // in miliseconds
+    // #ifdef DEBUG
+    if (CONFIG_DEBUG)
+    {
+      printf("END; generation=%d\n", generation);
+      gprint(&best);
+      std::cout << "PMUT:" << CONFIG_PMUT << "; ";
+      std::cout << "MUTAGENES:" << CONFIG_MUTAGENES << "; ";
+      std::cout << "TOUR:" << CONFIG_TOUR << "; ";
+      std::cout << "POPSIZE:" << CONFIG_POPSIZE << "; ";
+      std::cout << "GENERATIONS:" << CONFIG_GENERATIONS << "; ";
+      std::cout << "DURATION:" << duration << "ms" << std::endl;
+    }
+    else
+    {
+      // #else
+      printProgramReport(&best, duration);
+    }
+    // #endif
     return 1;
   }
 
@@ -331,8 +361,8 @@ void mutatorMoveBetweenVehicles(GA_chromosome *genome)
     deleteFromRoute(genome, vehicle_1, index_1, locations[map_locations[pickup]]);
   }
   UINT random_index = urandom(1, v_2_size - 1);
-  insertToRoute(genome, vehicle_2, random_index, pickup, locations[map_locations[pickup]]);
-  insertToRoute(genome, vehicle_2, random_index + 1, delivery, locations[map_locations[delivery]]);
+  UINT inserted_to_index = insertToRoute(genome, vehicle_2, random_index, pickup, locations[map_locations[pickup]], CAPACITY_OF_VEHICLES);
+  insertToRoute(genome, vehicle_2, inserted_to_index + 1, delivery, locations[map_locations[delivery]], CAPACITY_OF_VEHICLES);
 
   //------------------------------------------------------------------------------------------------------
   // printf("NEW:\n");
@@ -343,6 +373,7 @@ void mutatorMoveBetweenVehicles(GA_chromosome *genome)
 
 void mutatorChangeRouteSchedule(GA_chromosome *genome)
 {
+
   UINT vehicle;
   UINT v_size = 0;
   while (v_size <= 4)
@@ -351,71 +382,74 @@ void mutatorChangeRouteSchedule(GA_chromosome *genome)
     v_size = genome->routes[vehicle].route_length;
   }
 
-  UINT index = urandom(2, v_size - 3);
-  UINT value = genome->routes[vehicle].locations[index];
+  // ****************
+  // printf("Vehicle %d (%d): ", vehicle, genome->routes[vehicle].route_length);
+  // for (size_t j = 0; j < genome->routes[vehicle].route_length; j++)
+  // {
+  //   if (j != genome->routes[vehicle].route_length - 1)
+  //   {
+  //     printf("%d[%d], ", genome->routes[vehicle].locations[j], genome->routes[vehicle].utilization[j]);
+  //   }
+  //   else
+  //   {
+  //     printf("%d[%d]", genome->routes[vehicle].locations[j], genome->routes[vehicle].utilization[j]);
+  //   }
+  // }
+  // printf("\n");
+  // ****************
 
-  if (value % 2 == 0)
-  {
-    swapArrayValues(&genome->routes[vehicle].locations, index, index + 1);
-    UINT value_of_switched = genome->routes[vehicle].locations[index];
-    genome->routes[vehicle].utilization[index] = genome->routes[vehicle].utilization[index - 1] + locations[map_locations[value_of_switched]][3];
-    genome->map_route_position[value]++;
-    genome->map_route_position[value_of_switched]--;
-  }
-  else
-  {
-    swapArrayValues(&genome->routes[vehicle].locations, index, index - 1);
-    UINT value_of_switched = genome->routes[vehicle].locations[index];
-    genome->routes[vehicle].utilization[index - 1] = genome->routes[vehicle].utilization[index - 2] + locations[map_locations[value]][3];
-    genome->map_route_position[value]--;
-    genome->map_route_position[value_of_switched]++;
-  }
+  swapNeighborsInRoute(genome, vehicle, CAPACITY_OF_VEHICLES, locations, map_locations);
+
+  // ****************
+  // printf("Vehicle %d (%d): ", vehicle, genome->routes[vehicle].route_length);
+  // for (size_t j = 0; j < genome->routes[vehicle].route_length; j++)
+  // {
+  //   if (j != genome->routes[vehicle].route_length - 1)
+  //   {
+  //     printf("%d[%d], ", genome->routes[vehicle].locations[j], genome->routes[vehicle].utilization[j]);
+  //   }
+  //   else
+  //   {
+  //     printf("%d[%d]", genome->routes[vehicle].locations[j], genome->routes[vehicle].utilization[j]);
+  //   }
+  // }
+  // printf("\n");
+  // ****************
+
+  // UINT index = urandom(2, v_size - 3);
+  // UINT value = genome->routes[vehicle].locations[index];
+
+  // if (value % 2 == 0)
+  // {
+  //   swapArrayValues(&genome->routes[vehicle].locations, index, index + 1);
+  //   UINT value_of_switched = genome->routes[vehicle].locations[index];
+  //   genome->routes[vehicle].utilization[index] = genome->routes[vehicle].utilization[index - 1] + locations[map_locations[value_of_switched]][3];
+  //   genome->map_route_position[value]++;
+  //   genome->map_route_position[value_of_switched]--;
+  // }
+  // else
+  // {
+  //   swapArrayValues(&genome->routes[vehicle].locations, index, index - 1);
+  //   UINT value_of_switched = genome->routes[vehicle].locations[index];
+  //   genome->routes[vehicle].utilization[index - 1] = genome->routes[vehicle].utilization[index - 2] + locations[map_locations[value]][3];
+  //   genome->map_route_position[value]--;
+  //   genome->map_route_position[value_of_switched]++;
+  // }
 }
 
 cxxopts::ParseResult
-parse(int argc, char* argv[])
+parse(int argc, char *argv[])
 {
   try
   {
     cxxopts::Options options(argv[0], " - example command line options");
     options
-      .positional_help("[optional args]")
-      .show_positional_help();
-
-    bool apple = false;
+        .positional_help("[optional args]")
+        .show_positional_help();
 
     options
-      .allow_unrecognised_options()
-      .add_options()
-      ("a,apple", "an apple", cxxopts::value<bool>(apple))
-      ("b,bob", "Bob")
-      ("char", "A character", cxxopts::value<char>())
-      ("t,true", "True", cxxopts::value<bool>()->default_value("true"))
-      ("f, file", "File", cxxopts::value<std::vector<std::string>>(), "FILE")
-      ("i,input", "Input", cxxopts::value<std::string>())
-      ("o,output", "Output file", cxxopts::value<std::string>()
-          ->default_value("a.out")->implicit_value("b.def"), "BIN")
-      ("positional",
-        "Positional arguments: these are the arguments that are entered "
-        "without an option", cxxopts::value<std::vector<std::string>>())
-      ("long-description",
-        "thisisareallylongwordthattakesupthewholelineandcannotbebrokenataspace")
-      ("help", "Print help")
-      ("int", "An integer", cxxopts::value<int>(), "N")
-      ("float", "A floating point number", cxxopts::value<float>())
-      ("vector", "A list of doubles", cxxopts::value<std::vector<double>>())
-      ("option_that_is_too_long_for_the_help", "A very long option")
-    #ifdef CXXOPTS_USE_UNICODE
-      ("unicode", u8"A help option with non-ascii: à. Here the size of the"
-        " string should be correct")
-    #endif
-    ;
-
-    options.add_options("Group")
-      ("c,compile", "compile")
-      ("d,drop", "drop", cxxopts::value<std::vector<std::string>>());
-
-    options.parse_positional({"input", "output", "positional"});
+        .allow_unrecognised_options()
+        .add_options()("h,help", "Print help")("d,debug", "Debugging")("p,pmut", "Probability of mutation", cxxopts::value<int>(), "N")("m,mutagenes", "Number of mutated genes in the chromosome", cxxopts::value<int>(), "N")("t,tour", "Number of individuals in tournament selection", cxxopts::value<int>(), "N")("s,popsize", "Population size", cxxopts::value<int>(), "N")("g,generations", "Maximum number of generations", cxxopts::value<int>(), "N")("i,input_file", "Input file path", cxxopts::value<std::string>());
 
     auto result = options.parse(argc, argv);
 
@@ -424,102 +458,113 @@ parse(int argc, char* argv[])
       std::cout << options.help({"", "Group"}) << std::endl;
       exit(0);
     }
-
-    if (apple)
+    if (result.count("debug"))
     {
-      std::cout << "Saw option ‘a’ " << result.count("a") << " times " <<
-        std::endl;
+      CONFIG_DEBUG = true;
+    }
+    if (result.count("input_file"))
+    {
+      INPUT_FILE = result["input_file"].as<std::string>();
     }
 
-    if (result.count("b"))
+    if (result.count("pmut"))
     {
-      std::cout << "Saw option ‘b’" << std::endl;
+      CONFIG_PMUT = result["pmut"].as<int>();
     }
-
-    if (result.count("char"))
+    else
     {
-      std::cout << "Saw a character ‘" << result["char"].as<char>() << "’" << std::endl;
+      CONFIG_PMUT = 60;
     }
-
-    if (result.count("f"))
+    if (result.count("mutagenes"))
     {
-      auto& ff = result["f"].as<std::vector<std::string>>();
-      std::cout << "Files" << std::endl;
-      for (const auto& f : ff)
-      {
-        std::cout << f << std::endl;
-      }
+      CONFIG_MUTAGENES = result["mutagenes"].as<int>();
     }
-
-    if (result.count("input"))
+    else
     {
-      std::cout << "Input = " << result["input"].as<std::string>()
-        << std::endl;
+      CONFIG_MUTAGENES = 5;
     }
-
-    if (result.count("output"))
+    if (result.count("tour"))
     {
-      std::cout << "Output = " << result["output"].as<std::string>()
-        << std::endl;
+      CONFIG_TOUR = result["tour"].as<int>();
     }
-
-    if (result.count("positional"))
+    else
     {
-      std::cout << "Positional = {";
-      auto& v = result["positional"].as<std::vector<std::string>>();
-      for (const auto& s : v) {
-        std::cout << s << ", ";
-      }
-      std::cout << "}" << std::endl;
+      CONFIG_TOUR = 4;
     }
-
-    if (result.count("int"))
+    if (result.count("popsize"))
     {
-      std::cout << "int = " << result["int"].as<int>() << std::endl;
+      CONFIG_POPSIZE = result["popsize"].as<int>();
+      _popsize = (CONFIG_POPSIZE & 1) ? CONFIG_POPSIZE + 1 : CONFIG_POPSIZE;
     }
-
-    if (result.count("float"))
+    else
     {
-      std::cout << "float = " << result["float"].as<float>() << std::endl;
+      CONFIG_POPSIZE = 15;
     }
-
-    if (result.count("vector"))
+    if (result.count("generations"))
     {
-      std::cout << "vector = ";
-      const auto values = result["vector"].as<std::vector<double>>();
-      for (const auto& v : values) {
-        std::cout << v << ", ";
-      }
-      std::cout << std::endl;
+      CONFIG_GENERATIONS = result["generations"].as<int>();
     }
-
-    std::cout << "Arguments remain = " << argc << std::endl;
+    else
+    {
+      CONFIG_GENERATIONS = 2000000;
+    }
 
     return result;
-
-  } catch (const cxxopts::OptionException& e)
+  }
+  catch (const cxxopts::OptionException &e)
   {
     std::cout << "error parsing options: " << e.what() << std::endl;
     exit(1);
   }
 }
 
+void printProgramReport(GA_chromosome *best, float computed_time)
+{
+  std::ofstream out;
+  out.open("report.csv", std::ios::app);
+
+  UINT used_vehicles = 0;
+  for (UINT i = 0; i < NUMBER_OF_VEHICLES; i++)
+  {
+    if (best->routes[i].route_length > 2)
+    {
+      used_vehicles++;
+    }
+  }
+  float TOTAL_DISTANCE = (int)((1 / best->fitness) * 100 + .5);
+  std::stringstream output_ss;
+
+  output_ss << CONFIG_PMUT << ';';
+  output_ss << CONFIG_MUTAGENES << ';';
+  output_ss << CONFIG_TOUR << ';';
+  output_ss << CONFIG_POPSIZE << ';';
+  output_ss << CONFIG_GENERATIONS << ';';
+  output_ss << (float)TOTAL_DISTANCE / 100 << ';';
+  output_ss << used_vehicles << ';';
+  output_ss << computed_time << ';';
+  output_ss << std::endl;
+
+  std::string output_string = output_ss.str();
+  out << output_string;
+  std::cout << output_string;
+}
+
 // *****************************************************************************
 // ------------------------------ main program -------------------------------
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
+  auto result = parse(argc, argv);
+  auto arguments = result.arguments();
 
-  // auto result = parse(argc, argv);
-  // auto arguments = result.arguments();
-  // std::cout << "Saw " << arguments.size() << " arguments" << std::endl;
-
-  // return 0;
-
-  readDataset(&map_locations, &vehicles, &locations);
+  readDataset(&map_locations, &vehicles, &locations, INPUT_FILE);
   NUMBER_OF_VEHICLES = vehicles[0];
   CAPACITY_OF_VEHICLES = vehicles[1];
 
+  std::cout << NUMBER_OF_VEHICLES << std::endl;
+  std::cout << CAPACITY_OF_VEHICLES << std::endl;
+
   srand(time(0)); // random seed
+  time_beggining = std::chrono::high_resolution_clock::now();
   evolve();
 
   return 0;

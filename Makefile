@@ -1,17 +1,17 @@
 CXX ?= g++
 CXXFLAGS = -std=c++11 -Wall -Wextra -g
 
-vrp: main.o utilities.o
-	$(CXX) $(CXXFLAGS) main.o utilities.o -o vrp
+vrp: objs/main.o objs/utilities.o
+	$(CXX) $(CXXFLAGS) objs/main.o objs/utilities.o -o vrp
 
-main.o: main.cpp
-	$(CXX) $(CXXFLAGS) -c main.cpp
+objs/main.o: src/main.cpp
+	$(CXX) $(CXXFLAGS) -c src/main.cpp -o objs/main.o
 
-utilities.o: utilities.cpp
-	$(CXX) $(CXXFLAGS) -c utilities.cpp
+objs/utilities.o: src/utilities.cpp
+	$(CXX) $(CXXFLAGS) -c src/utilities.cpp -o objs/utilities.o
 
 run:
 	./vrp
 
 clean:
-	rm -f vrp
+	rm -f vrp 
