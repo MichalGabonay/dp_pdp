@@ -17,6 +17,7 @@ typedef struct {
 // definice typu chromozomu GA
 typedef struct {
     double fitness;   // fitness daneho jedince
+    double cost;    // fitness daneho jedince
     BOOL evaluate;  // ci je treba znovu vyhodnotit fitness
     std::vector<Route> routes;
     std::vector<UINT> map_route_position;

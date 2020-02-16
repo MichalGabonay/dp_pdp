@@ -93,14 +93,7 @@ bool Solver::Solve()
     }
   } while (!stop(this->config, this));
 
-  test(this);
-
   return true;
-}
-
-void test(Solver *solver)
-{
-  std::cout << solver->task->number_of_vehicles << std::endl;
 }
 
 // vypis chromozomu
@@ -224,12 +217,12 @@ BOOL stop(Config *config, Solver *solver)
       std::cout << "GENERATIONS:" << config->CONFIG_GENERATIONS << "; ";
       // std::cout << "DURATION:" << duration << "ms" << std::endl;
     }
-    else
-    {
-      gprint(&solver->best, solver);
+    // else
+    // {
+    //   gprint(&solver->best, solver);
       // #else
       // printProgramReport(&best, duration);
-    }
+    // }
     // #endif
     return 1;
   }
@@ -257,6 +250,8 @@ double fitness(GA_chromosome *genome, Task *task)
 
     total_distance += total_route_distance;
   }
+
+  genome->cost = total_distance;
 
   return 1 / total_distance;
 }

@@ -26,7 +26,6 @@ public:
   bool Solve();
 };
 
-void test(Solver* solver);
 void initialize(GA_chromosome *genome, Solver *solver);
 double fitness(GA_chromosome *genome, Task *task);
 BOOL stop(Config *config, Solver *solver);

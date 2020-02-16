@@ -3,6 +3,7 @@
 #include <iostream>
 #include <chrono>
 #include <unistd.h>
+#include <inttypes.h>
 
 #include "task.h"
 #include "solver.h"
@@ -28,8 +29,10 @@ unsigned int rand_init()
 
 int main()
 {
-    seed = rand_init();
-    std::cout << seed << std::endl;
+    // seed = rand_init();
+    seed = 3344629499;
+    srand(seed);
+    // std::cout << seed << std::endl;
 
     std::chrono::_V2::system_clock::time_point time_beggining;
     std::chrono::_V2::system_clock::time_point time_end;
@@ -51,10 +54,14 @@ int main()
         return 1;
     }
 
+    // std::cout << solver.best.cost << std::endl;
+
     time_end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(time_end - time_beggining).count();
     duration = duration / 1000; // in miliseconds
-    std::cout << "DURATION:" << duration << "ms" << std::endl;
+    // std::cout << "DURATION:" << duration << "ms" << std::endl;
+
+    printf("%f; %" PRId64 "; %u\n", solver.best.cost, duration, seed);
     
     return 0;
 }
