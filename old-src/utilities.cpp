@@ -37,7 +37,7 @@ str2int_errno str2int(int *out, char *s, UINT base) {
     return STR2INT_SUCCESS;
 }
 
-void readDataset(std::vector<int> *locations_map, std::vector<int> *vehicles, std::vector<std::vector<int>> *locations, std::string input_file_name){
+void readDataset(std::vector<int> *locations_map, std::vector<int> *vehicles, std::vector<std::vector<int>> *locations, std::string input_file_name, std::vector<double>* matrix){
 
   // std::string input_file_name = "lc101.txt";
   std::ifstream file(input_file_name);
@@ -67,16 +67,54 @@ void readDataset(std::vector<int> *locations_map, std::vector<int> *vehicles, st
 
   file.close();
 
+  std::vector<int> demands;
+  // std::vector<int> open_times;
+  // std::vector<int> close_times;
+  // std::vector<int> service_times;
+
   for (UINT i = 0; i < line_index - 1; i++)
   {
     if (i == 0)
     {
       locations_map->push_back(0);
+      demands.push_back(0);
     }
     if (locations->at(i)[8] != 0)
     {
       locations_map->push_back(i);
       locations_map->push_back(locations->at(i)[8]);
+      demands.push_back(locations->at(i)[3]);
+      demands.push_back(locations->at(locations->at(i)[8])[3]);
+
+      // // Case if I decided to solve problem wit TW *******************
+      // open_times.push_back(locations->at(i)[4]);
+      // open_times.push_back(locations->at(locations->at(i)[8])[4]);
+      // close_times.push_back(locations->at(i)[5]);
+      // close_times.push_back(locations->at(locations->at(i)[8])[5]);
+      // service_times.push_back(locations->at(i)[6]);
+      // service_times.push_back(locations->at(locations->at(i)[8])[6]);
+      // // **************************************************************
+    }
+  }
+
+  calculateDistanceMatrix(locations_map, locations, matrix);
+}
+
+void calculateDistanceMatrix(std::vector<int> *locations_map, std::vector<std::vector<int>> *locations, std::vector<double> *matrix) {
+  // std::vector<double> matrix;
+
+  for (size_t i = 0; i < locations_map->size(); i++)
+  {
+    for (size_t j = 0; j < locations_map->size(); j++)
+    {
+      if (i == j)
+      {
+        matrix->push_back(0);
+      } else {
+        std::vector<int> from = locations->at(locations_map->at(i));
+        std::vector<int> to = locations->at(locations_map->at(j));
+        matrix->push_back(hypot(from[1] - to[1], from[2] - to[2]));
+      }
     }
   }
 }

@@ -15,8 +15,8 @@ int CONFIG_PMUT = 60;
 int CONFIG_MUTAGENES = 5;
 int CONFIG_TOUR = 4;
 int CONFIG_POPSIZE = 16;
-int CONFIG_GENERATIONS = 2000000;
-std::string INPUT_FILE = "dataset/lc101.txt";
+int CONFIG_GENERATIONS = 100000;
+std::string INPUT_FILE = "../dataset/lc101.txt";
 std::chrono::_V2::system_clock::time_point time_beggining;
 std::chrono::_V2::system_clock::time_point time_end;
 
@@ -33,6 +33,7 @@ const UINT unit = 100;
 std::vector<std::vector<int>> locations;
 std::vector<int> map_locations;
 std::vector<int> vehicles;
+std::vector<double> matrix;
 UINT NUMBER_OF_VEHICLES;
 UINT CAPACITY_OF_VEHICLES;
 
@@ -276,6 +277,7 @@ BOOL stop()
     {
       // #else
       printProgramReport(&best, duration);
+      gprint(&best);
     }
     // #endif
     return 1;
@@ -304,9 +306,19 @@ double fitness(GA_chromosome *genome)
       int origin_y = locations[map_locations[loc_o]][2];
       int destination_x = locations[map_locations[loc_d]][1];
       int destination_y = locations[map_locations[loc_d]][2];
-      // printf("origin_x:%d, origin_y:%d, destination_x:%d, destination_y:%d\n", origin_x, origin_y, destination_x, destination_y);
-      total_route_distance += calculateDistanceBetweenPoints(
-          origin_x, origin_y, destination_x, destination_y);
+      printf("origin_x:%d, origin_y:%d, destination_x:%d, destination_y:%d\n", origin_x, origin_y, destination_x, destination_y);
+      // total_route_distance += calculateDistanceBetweenPoints(
+      //     origin_x, origin_y, destination_x, destination_y);
+
+      // std::cout << map_locations.size() << std::endl;
+      // std::cout << loc_o*map_locations.size() + loc_d << std::endl;
+      // std::cout << loc_o << " " << loc_d << std::endl;
+      // std::cout << matrix.size() << std::endl;
+      // std::cout << matrix[loc_o*map_locations.size() + loc_d] << std::endl;
+
+      std::cout << calculateDistanceBetweenPoints(origin_x, origin_y, destination_x, destination_y) << " == " << matrix[loc_o*map_locations.size() + loc_d] << std::endl;
+
+      total_route_distance += matrix[loc_o*map_locations.size() + loc_d];
     }
 
     genome->routes[i].distance = total_route_distance;
@@ -496,18 +508,18 @@ parse(int argc, char *argv[])
       CONFIG_POPSIZE = result["popsize"].as<int>();
       _popsize = (CONFIG_POPSIZE & 1) ? CONFIG_POPSIZE + 1 : CONFIG_POPSIZE;
     }
-    else
-    {
-      CONFIG_POPSIZE = 15;
-    }
+    // else
+    // {
+    //   CONFIG_POPSIZE = 15;
+    // }
     if (result.count("generations"))
     {
       CONFIG_GENERATIONS = result["generations"].as<int>();
     }
-    else
-    {
-      CONFIG_GENERATIONS = 2000000;
-    }
+    // else
+    // {
+    //   CONFIG_GENERATIONS = 2000000;
+    // }
 
     return result;
   }
@@ -549,6 +561,10 @@ void printProgramReport(GA_chromosome *best, float computed_time)
   std::cout << output_string;
 }
 
+double Travel(UINT from, UINT to, int matrix_order, std::vector<double> matrix){
+  return matrix[from*matrix_order + to];
+}
+
 // *****************************************************************************
 // ------------------------------ main program -------------------------------
 int main(int argc, char *argv[])
@@ -556,14 +572,31 @@ int main(int argc, char *argv[])
   auto result = parse(argc, argv);
   auto arguments = result.arguments();
 
-  readDataset(&map_locations, &vehicles, &locations, INPUT_FILE);
+  readDataset(&map_locations, &vehicles, &locations, INPUT_FILE, &matrix);
   NUMBER_OF_VEHICLES = vehicles[0];
   CAPACITY_OF_VEHICLES = vehicles[1];
 
-  std::cout << NUMBER_OF_VEHICLES << std::endl;
-  std::cout << CAPACITY_OF_VEHICLES << std::endl;
+  // std::cout << NUMBER_OF_VEHICLES << std::endl;
+  // std::cout << CAPACITY_OF_VEHICLES << std::endl;
 
-  srand(time(0)); // random seed
+  // for (size_t i = 0; i < locations.size(); i++)
+  // {
+  //   for (size_t j = 0; j < locations[i].size(); j++)
+  //   {
+  //     if (j != locations[i].size() - 1)
+  //     {
+  //         printf("%d, ", locations[i][j]);
+  //     }
+  //     else
+  //     {
+  //         printf("%d", locations[i][j]);
+  //     }
+  //   }
+  //   std::cout << std::endl; 
+  // }
+  // std::cout << std::endl;
+
+  srand(955031225); // random seed
   time_beggining = std::chrono::high_resolution_clock::now();
   evolve();
 
