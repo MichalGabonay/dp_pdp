@@ -10,6 +10,8 @@ class Config
 public:
   // configuration data
   bool CONFIG_DEBUG;
+  bool CONFIG_GENERATIONS_PRINT;
+  bool CONFIG_RESULT_SUMMARY;
   int CONFIG_PMUT;
   int CONFIG_MUTAGENES;
   int CONFIG_TOUR;

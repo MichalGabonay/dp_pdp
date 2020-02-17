@@ -196,22 +196,26 @@ BOOL mutator(GA_chromosome *genome, UINT _pmut, Solver *solver)
 // test na zastaveni evoluce
 BOOL stop(Config *config, Solver *solver)
 {
-  // if (solver->generation % 250 == 0)
-  // {
-  //   std::ostringstream os;
-  //   os << getpid() << ";";
-  //   for (int i = 0; i < solver->config->CONFIG_POPSIZE; i++)
-  //   {
-  //     os << solver->population[i].fitness;
-  //     if (i != solver->config->CONFIG_POPSIZE-1)
-  //     {
-  //       os << ";";
-  //     }   
-  //   }
-    
-  //   std::string gen_summary = os.str();
-  //   printf("%s\n", gen_summary.c_str());
-  // }
+  if (config->CONFIG_GENERATIONS_PRINT)
+  {
+    if (solver->generation % 1000 == 0)
+    {
+      std::ostringstream os;
+      os << getpid() << ";";
+      for (int i = 0; i < solver->config->CONFIG_POPSIZE; i++)
+      {
+        os << solver->population[i].fitness;
+        if (i != solver->config->CONFIG_POPSIZE-1)
+        {
+          os << ";";
+        }   
+      }
+      
+      std::string gen_summary = os.str();
+      printf("%s\n", gen_summary.c_str());
+    }
+  }
+  
   
   if (solver->best.fitness > solver->best_ever)
   {

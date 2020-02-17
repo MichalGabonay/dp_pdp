@@ -57,7 +57,11 @@ int main()
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(time_end - time_beggining).count();
     duration = duration / 1000; // in miliseconds
     
-    printf("%d;summary;%f;%f;%" PRId64 ";%u\n", getpid(), solver.best.fitness, solver.best.cost, duration, seed);
+    if (config.CONFIG_RESULT_SUMMARY)
+    {
+        printf("%d;summary;%f;%f;%" PRId64 ";%u\n", getpid(), solver.best.fitness, solver.best.cost, duration, seed);
+    }
+    
     
     return 0;
 }
