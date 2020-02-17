@@ -61,7 +61,9 @@ int main()
     duration = duration / 1000; // in miliseconds
     // std::cout << "DURATION:" << duration << "ms" << std::endl;
 
-    printf("%f; %" PRId64 "; %u\n", solver.best.cost, duration, seed);
+    // printf("%f; %" PRId64 "; %u\n", solver.best.cost, duration, seed);
+    
+    printf("%d;summary;%f;%f;%" PRId64 ";%u\n", getpid(), solver.best.fitness, solver.best.cost, duration, seed);
     
     return 0;
 }

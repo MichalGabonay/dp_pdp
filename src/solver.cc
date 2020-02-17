@@ -1,5 +1,9 @@
 #include "solver.h"
 
+#include <iostream>
+#include <bits/stdc++.h>
+#include <unistd.h>
+
 Solver::Solver(Task *i_task, Config *i_config)
 {
   task = i_task;
@@ -192,13 +196,30 @@ BOOL mutator(GA_chromosome *genome, UINT _pmut, Solver *solver)
 // test na zastaveni evoluce
 BOOL stop(Config *config, Solver *solver)
 {
+  // if (solver->generation % 250 == 0)
+  // {
+  //   std::ostringstream os;
+  //   os << getpid() << ";";
+  //   for (int i = 0; i < solver->config->CONFIG_POPSIZE; i++)
+  //   {
+  //     os << solver->population[i].fitness;
+  //     if (i != solver->config->CONFIG_POPSIZE-1)
+  //     {
+  //       os << ";";
+  //     }   
+  //   }
+    
+  //   std::string gen_summary = os.str();
+  //   printf("%s\n", gen_summary.c_str());
+  // }
+  
   if (solver->best.fitness > solver->best_ever)
   {
     solver->best_ever = solver->best.fitness;
     // #ifdef DEBUG
     if (config->CONFIG_DEBUG)
     {
-      printf("Fitness = %f | Total distance = %.2f  in generation %d\n", solver->best_ever, 1 / solver->best_ever, solver->generation);
+      printf("Fitness = %f | Total distance = %.2f  in generation %d\n", solver->best_ever, 1000 / solver->best_ever, solver->generation);
     }
     // #endif
   }
@@ -253,7 +274,7 @@ double fitness(GA_chromosome *genome, Task *task)
 
   genome->cost = total_distance;
 
-  return 1 / total_distance;
+  return 1000 / total_distance;
 }
 
 void mutatorMoveBetweenVehicles(GA_chromosome *genome, Solver *solver)
