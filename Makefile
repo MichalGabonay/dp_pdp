@@ -3,8 +3,8 @@ CXXFLAGS = -std=c++11 -Wall -Wextra -g
 
 # vrp: main.o
 # 	$(CXX) $(CXXFLAGS) main.o -o vrp
-vrp: objs/main.o objs/solver.o objs/task.o objs/config.o objs/vrp_helpers.o
-	$(CXX) $(CXXFLAGS) objs/main.o objs/solver.o objs/task.o objs/config.o objs/vrp_helpers.o -o vrp
+pdp_xgabon00: objs/main.o objs/solver.o objs/task.o objs/config.o objs/vrp_helpers.o
+	$(CXX) $(CXXFLAGS) objs/main.o objs/solver.o objs/task.o objs/config.o objs/vrp_helpers.o -o pdp_xgabon00
 
 objs/main.o: src/main.cc
 	$(CXX) $(CXXFLAGS) -c src/main.cc -o objs/main.o
@@ -22,7 +22,7 @@ objs/vrp_helpers.o: src/vrp_helpers.cc
 	$(CXX) $(CXXFLAGS) -c src/vrp_helpers.cc -o objs/vrp_helpers.o
 
 run:
-	./vrp
+	./pdp_xgabon00
 
 clean:
-	rm -f vrp 
+	rm -f pdp_xgabon00 
