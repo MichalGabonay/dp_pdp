@@ -27,6 +27,23 @@ void printArray(UINT *array, UINT array_size) {
     printf("\n");
 }
 
+void printRoute(Route route, int vehicle_index) {
+  printf("Vehicle %d (%d): ", vehicle_index, route.route_length);
+  for (size_t j = 0; j < route.route_length; j++)
+  {
+    if (j != route.route_length - 1)
+    {
+      printf("%d[%d], ", route.locations[j], route.utilization[j]);
+    }
+    else
+    {
+      printf("%d[%d]", route.locations[j], route.utilization[j]);
+    }
+  }
+  printf("\n");
+  printf("cost: %d  --  duration: %d  --  distance: %d \n\n", route.cost, route.duration, route.distance);
+}
+
 void swapNeighborsInRoute (GA_chromosome *g, UINT vehicle, UINT vehicle_capacity, std::vector<int> demands) {
   bool is_possible_swap = false;
   UINT value, value_of_switched;
@@ -53,8 +70,8 @@ void swapNeighborsInRoute (GA_chromosome *g, UINT vehicle, UINT vehicle_capacity
     }
     is_possible_swap = true;
   }
-  if (index == g->routes[vehicle].route_length - 1)
-  {
+  // if (index == g->routes[vehicle].route_length - 1)
+  // {
     // ****************
     // printf("Vehicle %d (%d): ", vehicle, g->routes[vehicle].route_length);
     // for (size_t j = 0; j < g->routes[vehicle].route_length; j++)
@@ -73,17 +90,59 @@ void swapNeighborsInRoute (GA_chromosome *g, UINT vehicle, UINT vehicle_capacity
 
     // std::cout << index << "  " << g->routes[vehicle].route_length << "  " << std::endl;
     // std::cout << value << "  " << value_of_switched << "  " << std::endl;
-  }
+  // }
   
-  // std::cout << "som tu 2" << std::endl;
   swapArrayValues(&g->routes[vehicle].locations, index, index + 1);
-  // std::cout << "som tu 3" << std::endl;
   g->routes[vehicle].utilization[index] = g->routes[vehicle].utilization[index - 1] + demands[value_of_switched];
-  // std::cout << "som tu 4" << std::endl;
   g->map_route_position[value]++;
-  // std::cout << "som tu 5" << std::endl;
   g->map_route_position[value_of_switched]--;
-  // std::cout << "som tu 6" << std::endl;
+}
+
+void swapLocations (GA_chromosome *g, UINT vehicle, UINT vehicle_capacity, std::vector<int> demands) {
+  UINT value, value_of_switched, index_1, index_2;
+  int number_of_tries = 0;
+  bool found_valid = false;
+  while (number_of_tries < 5 && found_valid == false) { // 5 tries to find valid, than it will take invalid which will be repaired
+    number_of_tries++;
+    index_1 = urandom(1, g->routes[vehicle].route_length - 3);
+    value = g->routes[vehicle].locations[index_1];
+    if (value % 2 == 0)
+    {
+      UINT index_1_pair = g->map_route_position[value - 1];
+      // std::cout << index_1 << "(" << value << ") : " << index_1_pair + 1 << " - " << g->routes[vehicle].route_length - 3 << std::endl;
+      index_2 = urandom(index_1_pair + 1, g->routes[vehicle].route_length - 3);
+    } else {
+      UINT index_1_pair = g->map_route_position[value + 1];
+      index_2 = urandom(1, index_1_pair - 1);
+    }
+    if (index_1 == index_2) { // selected same index, dont count as a try
+      number_of_tries--;
+      continue;
+    } 
+    
+    value_of_switched = g->routes[vehicle].locations[index_2];
+    if (value_of_switched % 2 == 0)
+    {
+      UINT index_2_pair = g->map_route_position[value_of_switched - 1];
+      if (index_2_pair >= index_1) continue; // invalid pickup-delivery order of switched      
+    } else {
+      UINT index_2_pair = g->map_route_position[value_of_switched + 1];
+      if (index_2_pair >= index_1) continue; // invalid pickup-delivery order of switched   
+    }
+    int load = 0;
+    for (UINT i = 0; i < g->routes[vehicle].route_length; i++)
+    {
+      load += demands[g->routes[vehicle].locations[i]];
+      if (load > (int) vehicle_capacity) continue; // capacity of vehicle exceeded           
+    }
+    found_valid = true;
+  }
+
+  swapArrayValues(&g->routes[vehicle].locations, index_1, index_2);
+
+  g->map_route_position[value] = index_2; 
+  g->map_route_position[value_of_switched] = index_1;
+  validateAndFixRoute(g, vehicle, vehicle_capacity, demands);
 }
 
 UINT insertToRoute (GA_chromosome *g, UINT vehicle, UINT index, UINT value, int demand, UINT vehicle_capacity) {
@@ -133,4 +192,63 @@ void deleteFromRoute (GA_chromosome *g, UINT vehicle, UINT index, int demand) {
   g->routes[vehicle].utilization[route_size - 1] = 0;
   g->routes[vehicle].utilization.pop_back();
   g->routes[vehicle].route_length--;
+}
+
+int selectRoute(GA_chromosome *genome, int number_of_vehicles) {
+  int vehicle = 0;
+  UINT v_size = 0;
+  UINT number_of_tries = 0;
+  while (v_size <= 4)
+  {
+    vehicle = urandom(0, number_of_vehicles - 1);
+    v_size = genome->routes[vehicle].route_length;
+    if (number_of_tries >= 9) { // 10 tries for founding route with length at least 4
+      return -1;
+    }
+    number_of_tries++;
+  }
+  return vehicle;
+}
+
+void validateAndFixRoute(GA_chromosome *g, UINT vehicle, UINT vehicle_capacity, std::vector<int> demands) {
+  int load = 0;
+  std::map<int, bool> visited;
+  UINT i = 0;
+  while (i < g->routes[vehicle].route_length)
+  {
+    int location = g->routes[vehicle].locations[i];
+    if (location != 0)
+    {
+      if (location % 2 == 0 && visited.find(location - 1) == visited.end()) // if pickup is in route behind delivery
+      {
+        UINT pickup_index = g->map_route_position[location - 1];
+        deleteFromRoute(g, vehicle, i, demands[location]);
+        insertToRoute(g, vehicle, pickup_index + 1, location, demands[location], vehicle_capacity);
+        continue;
+      }
+      load += demands[location];
+      if (load > (int) vehicle_capacity)
+      {
+        int load_over = load;
+        load -= demands[location];
+        for (UINT j = i + 1; j < g->routes[vehicle].route_length - 1; j++)
+        {
+          if ((int) g->routes[vehicle].locations[j] != location + 1) {
+            load_over += demands[g->routes[vehicle].locations[j]];
+          }
+          if (load_over > (int) vehicle_capacity)
+          {
+            continue;
+          }
+          deleteFromRoute(g, vehicle, i, demands[location]);
+          insertToRoute(g, vehicle, j, location, demands[location], vehicle_capacity);
+          break;
+        }
+        continue;        
+      }
+      visited[location] = true;
+      g->routes[vehicle].utilization[i] = load;   
+    }
+    i++;   
+  }
 }

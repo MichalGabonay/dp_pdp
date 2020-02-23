@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <vector>
+#include <map>
+#include <iostream>
 
 typedef unsigned int UINT;
 typedef int BOOL;
@@ -26,5 +28,9 @@ typedef struct {
 UINT urandom(UINT low, UINT high);
 void swapArrayValues(std::vector<UINT> *locations, UINT position1, UINT position2);
 void swapNeighborsInRoute (GA_chromosome *g, UINT vehicle, UINT vehicle_capacity, std::vector<int> demands);
+void swapLocations (GA_chromosome *g, UINT vehicle, UINT vehicle_capacity, std::vector<int> demands);
 UINT insertToRoute (GA_chromosome *g, UINT vehicle, UINT index, UINT value, int demand, UINT vehicle_capacity);
 void deleteFromRoute (GA_chromosome *g, UINT vehicle, UINT index, int demand);
+int selectRoute(GA_chromosome *genome, int number_of_vehicles);
+void validateAndFixRoute(GA_chromosome *g, UINT vehicle, UINT vehicle_capacity, std::vector<int> demands);
+void printRoute(Route route, int vehicle_index);

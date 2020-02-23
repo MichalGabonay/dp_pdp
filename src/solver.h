@@ -33,4 +33,6 @@ BOOL mutator(GA_chromosome *genome, UINT _pmut, Solver *solver);
 void gprint(GA_chromosome *genome, Solver *solver);
 void mutatorMoveBetweenVehicles(GA_chromosome *genome, Solver *solver);
 void mutatorChangeRouteSchedule(GA_chromosome *genome, Solver *solver);
+
+void test(GA_chromosome *genome, Solver *solver);
 #endif

@@ -29,6 +29,8 @@ bool Solver::Solve()
     pool1[i].evaluate = 1;
   }
 
+  // test(&pool1[1], this);
+
   //------------------------------------------------------------------------------------------------------------------------
   // mutatorChangeRouteSchedule(&pool1[1]);
   // exit(0);
@@ -108,7 +110,6 @@ void gprint(GA_chromosome *genome, Solver *solver)
   {
     if (genome->routes[i].route_length > 2)
     {
-
       printf("Vehicle %d (%d): ", i, genome->routes[i].route_length);
       for (size_t j = 0; j < genome->routes[i].route_length; j++)
       {
@@ -198,7 +199,7 @@ BOOL stop(Config *config, Solver *solver)
 {
   if (config->CONFIG_GENERATIONS_PRINT)
   {
-    if (solver->generation % 1000 == 0)
+    if (solver->generation % 250 == 0 || solver->generation == 1)
     {
       std::ostringstream os;
       os << getpid() << ";";
@@ -213,6 +214,7 @@ BOOL stop(Config *config, Solver *solver)
       
       std::string gen_summary = os.str();
       printf("%s\n", gen_summary.c_str());
+      // printf("%d\n", solver->generation);
     }
   }
   
@@ -339,13 +341,31 @@ void mutatorMoveBetweenVehicles(GA_chromosome *genome, Solver *solver)
 void mutatorChangeRouteSchedule(GA_chromosome *genome, Solver *solver)
 {
 
-  UINT vehicle;
-  UINT v_size = 0;
-  while (v_size <= 4)
-  {
-    vehicle = urandom(0, solver->task->number_of_vehicles - 1);
-    v_size = genome->routes[vehicle].route_length;
-  }
+  // UINT vehicle;
+  // UINT v_size = 0;
+  // UINT number_of_tries = 0;
+  // while (v_size <= 4)
+  // {
+  //   vehicle = urandom(0, solver->task->number_of_vehicles - 1);
+  //   v_size = genome->routes[vehicle].route_length;
+  //   if (number_of_tries >= 9) { // 10 tries for founding route with length at least 4
+  //     return;
+  //   }
+  //   number_of_tries++;
+  // }
 
-  swapNeighborsInRoute(genome, vehicle, solver->task->capacity_of_vehicles, solver->task->demands);
+  int route1 = selectRoute(genome, solver->task->number_of_vehicles);
+  // int route2 = selectRoute(genome, solver->task->number_of_vehicles);
+  if (route1 == -1) return; // finding of route was unsuccessful
+  
+  // swapNeighborsInRoute(genome, route1, solver->task->capacity_of_vehicles, solver->task->demands);
+  // printRoute(genome->routes[route1], route1);
+    // printRoute(genome->routes[route1], route1);
+  swapLocations(genome, route1, solver->task->capacity_of_vehicles, solver->task->demands);
+  // printRoute(genome->routes[route1], route1);
+}
+
+void test(GA_chromosome *genome, Solver *solver) {
+  mutatorChangeRouteSchedule(genome, solver);
+  exit(0);
 }
