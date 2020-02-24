@@ -59,7 +59,8 @@ int main()
     
     if (config.CONFIG_RESULT_SUMMARY)
     {
-        printf("%d;summary;%f;%f;%" PRId64 ";%u\n", getpid(), solver.best.fitness, solver.best.cost, duration, seed);
+        // printf("%d;summary;%f;%f;%" PRId64 ";%u\n", getpid(), solver.best.fitness, solver.best.cost, duration, seed);
+        printf("%f\n", solver.best.fitness);
     }
     
     
