@@ -216,14 +216,27 @@ void validateAndFixRoute(GA_chromosome *g, UINT vehicle, UINT vehicle_capacity, 
   UINT i = 0;
   while (i < g->routes[vehicle].route_length)
   {
+    // printRoute(g->routes[vehicle], vehicle);
     int location = g->routes[vehicle].locations[i];
     if (location != 0)
     {
       if (location % 2 == 0 && visited.find(location - 1) == visited.end()) // if pickup is in route behind delivery
       {
         UINT pickup_index = g->map_route_position[location - 1];
-        deleteFromRoute(g, vehicle, i, demands[location]);
-        insertToRoute(g, vehicle, pickup_index + 1, location, demands[location], vehicle_capacity);
+        switch (urandom(1, 2))
+        {
+          case 1: { // move delivery somewhere behind pickup
+            int new_index = urandom(pickup_index + 1, g->routes[vehicle].route_length - 2);
+            deleteFromRoute(g, vehicle, i, demands[location]);
+            insertToRoute(g, vehicle, new_index, location, demands[location], vehicle_capacity);
+            break;
+          } 
+          case 2: { // move pickup exactly 1 place before delivery
+            deleteFromRoute(g, vehicle, pickup_index, demands[location-1]);
+            insertToRoute(g, vehicle, i, location-1, demands[location-1], vehicle_capacity);
+            break;
+          }
+        }
         continue;
       }
       load += demands[location];

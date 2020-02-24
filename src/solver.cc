@@ -29,8 +29,6 @@ bool Solver::Solve()
     pool1[i].evaluate = 1;
   }
 
-  // test(&pool1[1], this);
-
   //------------------------------------------------------------------------------------------------------------------------
   // mutatorChangeRouteSchedule(&pool1[1]);
   // exit(0);
@@ -97,6 +95,7 @@ bool Solver::Solve()
       next_population[i] = ind1_new;
       next_population[i + 1] = ind2_new;
     }
+    
   } while (!stop(this->config, this));
 
   return true;
@@ -359,13 +358,13 @@ void mutatorChangeRouteSchedule(GA_chromosome *genome, Solver *solver)
   if (route1 == -1) return; // finding of route was unsuccessful
   
   // swapNeighborsInRoute(genome, route1, solver->task->capacity_of_vehicles, solver->task->demands);
-  // printRoute(genome->routes[route1], route1);
-    // printRoute(genome->routes[route1], route1);
+
   swapLocations(genome, route1, solver->task->capacity_of_vehicles, solver->task->demands);
-  // printRoute(genome->routes[route1], route1);
 }
 
 void test(GA_chromosome *genome, Solver *solver) {
+  
+  // std::cout << solver->task->capacity_of_vehicles << std::endl;
   mutatorChangeRouteSchedule(genome, solver);
-  exit(0);
+  // exit(0);
 }
