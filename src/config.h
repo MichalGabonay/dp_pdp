@@ -16,7 +16,9 @@ public:
   int CONFIG_MUTAGENES;
   int CONFIG_TOUR;
   int CONFIG_POPSIZE;
+  int CONFIG_LAMBDA;
   int CONFIG_GENERATIONS;
+  std::string CONFIG_EVOLUTION_TYPE;
   std::string INPUT_FILE;
   unsigned int unit;
 

@@ -22,6 +22,11 @@ public:
   GA_chromosome *pool1;
   GA_chromosome *pool2;
 
+  // ES -----------
+  GA_chromosome *pop;
+  GA_chromosome *offs;
+  // --------------
+
   Solver(Task* task, Config* config);
   bool Solve();
 };

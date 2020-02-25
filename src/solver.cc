@@ -3,6 +3,7 @@
 #include <iostream>
 #include <bits/stdc++.h>
 #include <unistd.h>
+#include <algorithm>
 
 Solver::Solver(Task *i_task, Config *i_config)
 {
@@ -12,91 +13,137 @@ Solver::Solver(Task *i_task, Config *i_config)
 
 bool Solver::Solve()
 {
-  pool1 = (GA_chromosome *)calloc(config->CONFIG_POPSIZE, sizeof(GA_chromosome));
-  pool2 = (GA_chromosome *)calloc(config->CONFIG_POPSIZE, sizeof(GA_chromosome));
-  // inicializace promennych
-  generation = 0;
-  best.fitness = 0.0;
-  best_ever = 0.0;
-  GA_chromosome ind1_new, ind2_new;
-  int _tour = (config->CONFIG_TOUR >= 2 ? config->CONFIG_TOUR : 2);
-  UINT i1;
-
-  // inicializace populace
-  for (int i = 0; i < config->CONFIG_POPSIZE; i++)
+  if (config->CONFIG_EVOLUTION_TYPE == "ES")
   {
-    initialize(&pool1[i], this);
-    pool1[i].evaluate = 1;
-  }
+    pop = (GA_chromosome *)calloc(config->CONFIG_POPSIZE, sizeof(GA_chromosome));
+    offs = (GA_chromosome *)calloc(config->CONFIG_LAMBDA, sizeof(GA_chromosome));
+    // int ofx[config->CONFIG_LAMBDA];
+    std::vector<int> ofx;
+    generation = 0;
+    best.fitness = 0.0;
+    best_ever = 0.0;
 
-  //------------------------------------------------------------------------------------------------------------------------
-  // mutatorChangeRouteSchedule(&pool1[1]);
-  // exit(0);
-  //------------------------------------------------------------------------------------------------------------------------
-
-  // evolucni cyklus
-  do
-  {
-    generation++;
-    if (generation & 1)
-    {
-      population = pool1;
-      next_population = pool2;
-    }
-    else
-    {
-      population = pool2;
-      next_population = pool1;
-    }
-
-    // ohodnoceni populace
     for (int i = 0; i < config->CONFIG_POPSIZE; i++)
     {
-      if (population[i].evaluate)
-      {
-        // gprint(&population[i]);
-        population[i].fitness = fitness(&population[i], this->task);
-        if (population[i].fitness >= best.fitness)
-          best = population[i];
-        population[i].evaluate = 0;
-      }
+      initialize(&pop[i], this);
+      pop[i].evaluate = 1;
     }
 
-    // elitizmus
-    next_population[0] = best; // dosud nejlepsi nalezeny jedinec...
-    GA_chromosome mutant = best;
-    mutator(&mutant, config->unit, this);
-    next_population[1] = mutant; // ...a mutant nejlepsiho
-                                 // tvorba nove populace
-    for (int i = 2; i < config->CONFIG_POPSIZE; i += 2)
+    do
     {
-      GA_chromosome *ind1 = NULL, *ind2 = NULL;
-      // turnajovy vyber jedincu
-      for (int t = 0; t < _tour; t++)
+      generation++;
+      std::map <float, int, std::greater<float>> sortMap;
+      // generovani LAMBDA potomku do offs
+      for (int i = 0; i < config->CONFIG_LAMBDA; i++)
       {
-        i1 = urandom(0, config->CONFIG_POPSIZE - 1);
-        if (ind1 == NULL)
-          ind1 = &population[i1];
-        else if (ind2 == NULL)
-          ind2 = &population[i1];
-        else if (population[i1].fitness > ind1->fitness)
-          ind1 = &population[i1];
-        else if (population[i1].fitness > ind2->fitness)
-          ind2 = &population[i1];
+        // selekce pro reprodukci nahodne
+        offs[i] = pop[urandom(0, config->CONFIG_POPSIZE - 1)];
+        mutator(&offs[i], config->unit, this); // MUTAGENES postupne od 1 do LAMBDA:)
+        offs[i].fitness = fitness(&offs[i], this->task);
+        // ofx[i] = i;
+        sortMap[offs[i].fitness] = i;
       }
-      ind1_new = *ind1;
-      ind2_new = *ind2;
-      // mutace
-      if (mutator(&ind1_new, config->CONFIG_PMUT, this))
-        ind1_new.evaluate = 1;
-      if (mutator(&ind2_new, config->CONFIG_PMUT, this))
-        ind2_new.evaluate = 1;
-      // umisteni potomku do nove populace
-      next_population[i] = ind1_new;
-      next_population[i + 1] = ind2_new;
+      // serazeni indexu potomku podle fitness
+      // std::sort(ofx, config->CONFIG_LAMBDA, sizeof(int), compare);
+      // aktualizace nejlepsiho
+      for (std::map<float, int>::iterator i = sortMap.begin(); i != sortMap.end(); i++)
+      {
+          ofx.push_back(i->second);
+      }
+      if (offs[ofx[0]].fitness >= best.fitness)
+      {
+        best = offs[ofx[0]];
+      }
+      pop[0] = best; // elitismus
+      // POPSIZE nejlepsich z offs do nove pop (deterministicke nahrazeni)
+      for (int i = 1; i < config->CONFIG_POPSIZE; i++)
+        pop[i] = offs[ofx[i]];
+
+    } while (!stop(this->config, this));
+  } else {
+    // evolucni cyklus - GA ******************************************************************************************
+    pool1 = (GA_chromosome *)calloc(config->CONFIG_POPSIZE, sizeof(GA_chromosome));
+    pool2 = (GA_chromosome *)calloc(config->CONFIG_POPSIZE, sizeof(GA_chromosome));
+    // inicializace promennych
+    generation = 0;
+    best.fitness = 0.0;
+    best_ever = 0.0;
+    GA_chromosome ind1_new, ind2_new;
+    int _tour = (config->CONFIG_TOUR >= 2 ? config->CONFIG_TOUR : 2);
+    UINT i1;
+
+    // inicializace populace
+    for (int i = 0; i < config->CONFIG_POPSIZE; i++)
+    {
+      initialize(&pool1[i], this);
+      pool1[i].evaluate = 1;
     }
     
-  } while (!stop(this->config, this));
+    do
+    {
+      generation++;
+      if (generation & 1)
+      {
+        population = pool1;
+        next_population = pool2;
+      }
+      else
+      {
+        population = pool2;
+        next_population = pool1;
+      }
+
+      // ohodnoceni populace
+      for (int i = 0; i < config->CONFIG_POPSIZE; i++)
+      {
+        if (population[i].evaluate)
+        {
+          // gprint(&population[i]);
+          population[i].fitness = fitness(&population[i], this->task);
+          if (population[i].fitness >= best.fitness)
+            best = population[i];
+          population[i].evaluate = 0;
+        }
+      }
+
+      // elitizmus
+      next_population[0] = best; // dosud nejlepsi nalezeny jedinec...
+      GA_chromosome mutant = best;
+      mutator(&mutant, config->unit, this);
+      next_population[1] = mutant; // ...a mutant nejlepsiho
+                                  // tvorba nove populace
+      for (int i = 2; i < config->CONFIG_POPSIZE; i += 2)
+      {
+        GA_chromosome *ind1 = NULL, *ind2 = NULL;
+        // turnajovy vyber jedincu
+        for (int t = 0; t < _tour; t++)
+        {
+          i1 = urandom(0, config->CONFIG_POPSIZE - 1);
+          if (ind1 == NULL)
+            ind1 = &population[i1];
+          else if (ind2 == NULL)
+            ind2 = &population[i1];
+          else if (population[i1].fitness > ind1->fitness)
+            ind1 = &population[i1];
+          else if (population[i1].fitness > ind2->fitness)
+            ind2 = &population[i1];
+        }
+        ind1_new = *ind1;
+        ind2_new = *ind2;
+        // mutace
+        if (mutator(&ind1_new, config->CONFIG_PMUT, this))
+          ind1_new.evaluate = 1;
+        if (mutator(&ind2_new, config->CONFIG_PMUT, this))
+          ind2_new.evaluate = 1;
+        // umisteni potomku do nove populace
+        next_population[i] = ind1_new;
+        next_population[i + 1] = ind2_new;
+      }
+
+    } while (!stop(this->config, this));
+    // ******************************************************************************************
+  }  
+
 
   return true;
 }
@@ -126,7 +173,7 @@ void gprint(GA_chromosome *genome, Solver *solver)
       used_vehicles++;
     }
   }
-  printf("TOTAL DISTANCE: %f, USED VEHICLES: %d\n", 1 / genome->fitness, used_vehicles);
+  printf("TOTAL DISTANCE: %f, USED VEHICLES: %d\n", 1000 / genome->fitness, used_vehicles);
 }
 
 // random initialization of population
@@ -189,7 +236,6 @@ BOOL mutator(GA_chromosome *genome, UINT _pmut, Solver *solver)
     }
     return 1; // probehla-li mutace, vratim true...
   }
-
   return 0; // ...jinak vracim false
 }
 
@@ -205,33 +251,28 @@ BOOL stop(Config *config, Solver *solver)
       for (int i = 0; i < solver->config->CONFIG_POPSIZE; i++)
       {
         os << solver->population[i].fitness;
-        if (i != solver->config->CONFIG_POPSIZE-1)
+        if (i != solver->config->CONFIG_POPSIZE - 1)
         {
           os << ";";
-        }   
+        }
       }
-      
+
       std::string gen_summary = os.str();
       printf("%s\n", gen_summary.c_str());
-      // printf("%d\n", solver->generation);
     }
   }
-  
-  
+
   if (solver->best.fitness > solver->best_ever)
   {
     solver->best_ever = solver->best.fitness;
-    // #ifdef DEBUG
     if (config->CONFIG_DEBUG)
     {
       printf("Fitness = %f | Total distance = %.2f  in generation %d\n", solver->best_ever, 1000 / solver->best_ever, solver->generation);
     }
-    // #endif
   }
 
   if (config->CONFIG_GENERATIONS > 0 && solver->generation == config->CONFIG_GENERATIONS)
   {
-    // #ifdef DEBUG
     if (config->CONFIG_DEBUG)
     {
       printf("END; generation=%d\n", solver->generation);
@@ -243,13 +284,6 @@ BOOL stop(Config *config, Solver *solver)
       std::cout << "GENERATIONS:" << config->CONFIG_GENERATIONS << "; ";
       // std::cout << "DURATION:" << duration << "ms" << std::endl;
     }
-    // else
-    // {
-    //   gprint(&solver->best, solver);
-      // #else
-      // printProgramReport(&best, duration);
-    // }
-    // #endif
     return 1;
   }
 
@@ -301,12 +335,6 @@ void mutatorMoveBetweenVehicles(GA_chromosome *genome, Solver *solver)
 
   UINT v_2_size = genome->routes[vehicle_2].route_length;
 
-  //------------------------------------------------------------------------------------------------------
-  // printf("OLD:\n");
-  // printArray(genome->routes[vehicle_1].locations, genome->routes[vehicle_1].route_length);
-  // printArray(genome->routes[vehicle_2].locations, genome->routes[vehicle_2].route_length);
-  //------------------------------------------------------------------------------------------------------
-
   UINT index_1 = urandom(1, v_1_size - 2);
   UINT value = genome->routes[vehicle_1].locations[index_1];
 
@@ -327,43 +355,22 @@ void mutatorMoveBetweenVehicles(GA_chromosome *genome, Solver *solver)
     deleteFromRoute(genome, vehicle_1, index_1, solver->task->demands[pickup]);
   }
   UINT random_index = urandom(1, v_2_size - 1);
-  UINT inserted_to_index = insertToRoute(genome, vehicle_2, random_index, pickup, solver->task->demands[pickup], solver->task->capacity_of_vehicles);
-  insertToRoute(genome, vehicle_2, inserted_to_index + 1, delivery, solver->task->demands[delivery], solver->task->capacity_of_vehicles);
-
-  //------------------------------------------------------------------------------------------------------
-  // printf("NEW:\n");
-  // printArray(genome->routes[vehicle_1].locations, genome->routes[vehicle_1].route_length);
-  // printArray(genome->routes[vehicle_2].locations, genome->routes[vehicle_2].route_length);
-  //------------------------------------------------------------------------------------------------------
+  insertToRoute(genome, vehicle_2, random_index, pickup, solver->task->demands[pickup], solver->task->capacity_of_vehicles);
+  insertToRoute(genome, vehicle_2, random_index + 1, delivery, solver->task->demands[delivery], solver->task->capacity_of_vehicles);
 }
 
 void mutatorChangeRouteSchedule(GA_chromosome *genome, Solver *solver)
 {
-
-  // UINT vehicle;
-  // UINT v_size = 0;
-  // UINT number_of_tries = 0;
-  // while (v_size <= 4)
-  // {
-  //   vehicle = urandom(0, solver->task->number_of_vehicles - 1);
-  //   v_size = genome->routes[vehicle].route_length;
-  //   if (number_of_tries >= 9) { // 10 tries for founding route with length at least 4
-  //     return;
-  //   }
-  //   number_of_tries++;
-  // }
-
   int route1 = selectRoute(genome, solver->task->number_of_vehicles);
-  // int route2 = selectRoute(genome, solver->task->number_of_vehicles);
-  if (route1 == -1) return; // finding of route was unsuccessful
-  
-  // swapNeighborsInRoute(genome, route1, solver->task->capacity_of_vehicles, solver->task->demands);
+  if (route1 == -1)
+    return; // finding of route was not successful
 
+  // swapNeighborsInRoute(genome, route1, solver->task->capacity_of_vehicles, solver->task->demands);
   swapLocations(genome, route1, solver->task->capacity_of_vehicles, solver->task->demands);
 }
 
-void test(GA_chromosome *genome, Solver *solver) {
-  
+void test(GA_chromosome *genome, Solver *solver)
+{
   // std::cout << solver->task->capacity_of_vehicles << std::endl;
   mutatorChangeRouteSchedule(genome, solver);
   // exit(0);

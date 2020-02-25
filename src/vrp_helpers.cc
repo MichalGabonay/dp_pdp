@@ -145,6 +145,34 @@ void swapLocations (GA_chromosome *g, UINT vehicle, UINT vehicle_capacity, std::
   validateAndFixRoute(g, vehicle, vehicle_capacity, demands);
 }
 
+void moveInsideRoute (GA_chromosome *g, UINT vehicle, UINT index_from, UINT index_to, UINT value, int demand) {
+  // UINT route_size = g->routes[vehicle].route_length;
+  if (index_from < index_to) {
+    for (size_t i = index_from + 1; i <= index_to; i++)
+    {
+      if (g->map_route_position[g->routes[vehicle].locations[i]] != 0)
+      {
+        g->map_route_position[g->routes[vehicle].locations[i]]--;
+      }
+      g->routes[vehicle].locations[i-1] = g->routes[vehicle].locations[i];
+      g->routes[vehicle].utilization[i-1] = g->routes[vehicle].utilization[i] - demand;
+    }
+  } else {
+    for (size_t i = index_from - 1; i >= index_to; i--)
+    {
+      if (g->map_route_position[g->routes[vehicle].locations[i]] != 0)
+      {
+        g->map_route_position[g->routes[vehicle].locations[i]]++; 
+      }
+      g->routes[vehicle].locations[i+1] = g->routes[vehicle].locations[i];
+      g->routes[vehicle].utilization[i+1] = g->routes[vehicle].utilization[i] + demand;
+    }
+    g->routes[vehicle].utilization[index_to] = g->routes[vehicle].utilization[index_to-1] + demand;
+  }
+  g->routes[vehicle].locations[index_to] = value;
+  g->map_route_position[value] = index_to;
+}
+
 UINT insertToRoute (GA_chromosome *g, UINT vehicle, UINT index, UINT value, int demand, UINT vehicle_capacity) {
   UINT route_size = g->routes[vehicle].route_length;
   while (g->routes[vehicle].utilization[index - 1] + demand > (int) vehicle_capacity)
@@ -197,15 +225,14 @@ void deleteFromRoute (GA_chromosome *g, UINT vehicle, UINT index, int demand) {
 int selectRoute(GA_chromosome *genome, int number_of_vehicles) {
   int vehicle = 0;
   UINT v_size = 0;
-  UINT number_of_tries = 0;
-  while (v_size <= 4)
+  vehicle = urandom(0, number_of_vehicles - 1);
+  while (true)
   {
-    vehicle = urandom(0, number_of_vehicles - 1);
     v_size = genome->routes[vehicle].route_length;
-    if (number_of_tries >= 9) { // 10 tries for founding route with length at least 4
-      return -1;
-    }
-    number_of_tries++;
+    if (v_size > 4)
+      break;
+    
+    vehicle = (vehicle + 1) % number_of_vehicles;
   }
   return vehicle;
 }
@@ -227,13 +254,11 @@ void validateAndFixRoute(GA_chromosome *g, UINT vehicle, UINT vehicle_capacity, 
         {
           case 1: { // move delivery somewhere behind pickup
             int new_index = urandom(pickup_index + 1, g->routes[vehicle].route_length - 2);
-            deleteFromRoute(g, vehicle, i, demands[location]);
-            insertToRoute(g, vehicle, new_index, location, demands[location], vehicle_capacity);
+            moveInsideRoute(g, vehicle, i, new_index, location, demands[location]);
             break;
           } 
           case 2: { // move pickup exactly 1 place before delivery
-            deleteFromRoute(g, vehicle, pickup_index, demands[location-1]);
-            insertToRoute(g, vehicle, i, location-1, demands[location-1], vehicle_capacity);
+            moveInsideRoute(g, vehicle, pickup_index, i, location-1, demands[location-1]);
             break;
           }
         }
@@ -253,8 +278,7 @@ void validateAndFixRoute(GA_chromosome *g, UINT vehicle, UINT vehicle_capacity, 
           {
             continue;
           }
-          deleteFromRoute(g, vehicle, i, demands[location]);
-          insertToRoute(g, vehicle, j, location, demands[location], vehicle_capacity);
+          moveInsideRoute(g, vehicle, i, j, location, demands[location]);
           break;
         }
         continue;        
