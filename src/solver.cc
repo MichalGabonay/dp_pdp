@@ -263,14 +263,27 @@ BOOL stop(Config *config, Solver *solver)
 {
   if (config->CONFIG_GENERATIONS_PRINT)
   {
-    if (solver->generation % 250 == 0 || solver->generation == 1)
+    if (solver->generation % 1000 == 0 || solver->generation == 1)
     {
       std::ostringstream os;
       os << getpid() << ";";
-      for (int i = 0; i < solver->config->CONFIG_POPSIZE; i++)
+      int popsize;
+      if (solver->config->CONFIG_EVOLUTION_TYPE == "ES")
       {
-        os << solver->population[i].fitness;
-        if (i != solver->config->CONFIG_POPSIZE - 1)
+        popsize = solver->config->CONFIG_MI;
+      } else {
+        popsize = solver->config->CONFIG_POPSIZE;
+      }
+      
+      for (int i = 0; i < popsize; i++)
+      {
+        if (solver->config->CONFIG_EVOLUTION_TYPE == "ES")
+        {
+          os << solver->pop[i].fitness;
+        } else {
+          os << solver->population[i].fitness;
+        }
+        if (i != popsize - 1)
         {
           os << ";";
         }
