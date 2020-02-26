@@ -29,26 +29,8 @@ unsigned int rand_init()
 
 int main()
 {
-    // std::map <float, int, std::greater<float>> mymap;
-    // std::vector<int> sorted;
-    // mymap[0.531] = 0;
-    // mymap[0.131] = 1;
-    // mymap[0.431] = 2;
-    // mymap[0.331] = 3;
-
-    // for (std::map<float, int>::iterator i = mymap.begin(); i != mymap.end(); i++)
-    // {
-    //     sorted.push_back(i->second);
-    // }
-
-    // std::cout << sorted[0] << std::endl;
-    // std::cout << sorted[1] << std::endl;
-    // std::cout << sorted[2] << std::endl;
-    // std::cout << sorted[3] << std::endl;
-
-    // exit (0);
     // seed = rand_init();
-    seed = 2179675463;
+    seed = 1970651133;
     srand(seed);
 
     std::chrono::_V2::system_clock::time_point time_beggining;
@@ -73,14 +55,13 @@ int main()
 
     time_end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(time_end - time_beggining).count();
-    duration = duration / 1000; // in miliseconds
+    duration = duration / 1000000; // in seconds
     
     if (config.CONFIG_RESULT_SUMMARY)
     {
         printf("%d;summary;%f;%f;%" PRId64 ";%u\n", getpid(), solver.best.fitness, solver.best.cost, duration, seed);
         // printf("%f\n", solver.best.fitness);
     }
-    
     
     return 0;
 }

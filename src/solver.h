@@ -24,6 +24,7 @@ public:
 
   // ES -----------
   GA_chromosome *pop;
+  GA_chromosome *next_pop;
   GA_chromosome *offs;
   // --------------
 
@@ -34,7 +35,7 @@ public:
 void initialize(GA_chromosome *genome, Solver *solver);
 double fitness(GA_chromosome *genome, Task *task);
 BOOL stop(Config *config, Solver *solver);
-BOOL mutator(GA_chromosome *genome, UINT _pmut, Solver *solver);
+BOOL mutator(GA_chromosome *genome, UINT _pmut, Solver *solver, int mutagens);
 void gprint(GA_chromosome *genome, Solver *solver);
 void mutatorMoveBetweenVehicles(GA_chromosome *genome, Solver *solver);
 void mutatorChangeRouteSchedule(GA_chromosome *genome, Solver *solver);

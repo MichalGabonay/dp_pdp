@@ -15,15 +15,16 @@ bool Solver::Solve()
 {
   if (config->CONFIG_EVOLUTION_TYPE == "ES")
   {
-    pop = (GA_chromosome *)calloc(config->CONFIG_POPSIZE, sizeof(GA_chromosome));
+    pop = (GA_chromosome *)calloc(config->CONFIG_MI, sizeof(GA_chromosome));
+    next_pop = (GA_chromosome *)calloc(config->CONFIG_MI, sizeof(GA_chromosome));
     offs = (GA_chromosome *)calloc(config->CONFIG_LAMBDA, sizeof(GA_chromosome));
     // int ofx[config->CONFIG_LAMBDA];
-    std::vector<int> ofx;
+    
     generation = 0;
     best.fitness = 0.0;
     best_ever = 0.0;
 
-    for (int i = 0; i < config->CONFIG_POPSIZE; i++)
+    for (int i = 0; i < config->CONFIG_MI; i++)
     {
       initialize(&pop[i], this);
       pop[i].evaluate = 1;
@@ -33,31 +34,44 @@ bool Solver::Solve()
     {
       generation++;
       std::map <float, int, std::greater<float>> sortMap;
+      std::vector<int> ofx;
+
+      if (config->CONFIG_ES_PLUS)
+      {
+        for (int i = 0; i < config->CONFIG_MI; i++) {
+          sortMap[pop[i].fitness] = (i + 1) * (-1);
+        }
+      }
+      
       // generovani LAMBDA potomku do offs
       for (int i = 0; i < config->CONFIG_LAMBDA; i++)
       {
         // selekce pro reprodukci nahodne
-        offs[i] = pop[urandom(0, config->CONFIG_POPSIZE - 1)];
-        mutator(&offs[i], config->unit, this); // MUTAGENES postupne od 1 do LAMBDA:)
+        offs[i] = pop[urandom(0, config->CONFIG_MI - 1)];
+        mutator(&offs[i], config->unit, this, -1); // MUTAGENES postupne od 1 do LAMBDA:)
         offs[i].fitness = fitness(&offs[i], this->task);
-        // ofx[i] = i;
         sortMap[offs[i].fitness] = i;
       }
       // serazeni indexu potomku podle fitness
-      // std::sort(ofx, config->CONFIG_LAMBDA, sizeof(int), compare);
-      // aktualizace nejlepsiho
       for (std::map<float, int>::iterator i = sortMap.begin(); i != sortMap.end(); i++)
       {
           ofx.push_back(i->second);
       }
+      
       if (offs[ofx[0]].fitness >= best.fitness)
       {
         best = offs[ofx[0]];
       }
-      pop[0] = best; // elitismus
-      // POPSIZE nejlepsich z offs do nove pop (deterministicke nahrazeni)
-      for (int i = 1; i < config->CONFIG_POPSIZE; i++)
-        pop[i] = offs[ofx[i]];
+      // pop[0] = best; // elitismus
+      for (int i = 0; i < config->CONFIG_MI; i++) {
+        if (ofx[i] < 0)
+        {
+          next_pop[i] = pop[(ofx[i]+1)*(-1)];
+        } else {
+          next_pop[i] = offs[ofx[i]];
+        }
+      }
+      pop = next_pop;
 
     } while (!stop(this->config, this));
   } else {
@@ -109,7 +123,7 @@ bool Solver::Solve()
       // elitizmus
       next_population[0] = best; // dosud nejlepsi nalezeny jedinec...
       GA_chromosome mutant = best;
-      mutator(&mutant, config->unit, this);
+      mutator(&mutant, config->unit, this, -1);
       next_population[1] = mutant; // ...a mutant nejlepsiho
                                   // tvorba nove populace
       for (int i = 2; i < config->CONFIG_POPSIZE; i += 2)
@@ -131,9 +145,9 @@ bool Solver::Solve()
         ind1_new = *ind1;
         ind2_new = *ind2;
         // mutace
-        if (mutator(&ind1_new, config->CONFIG_PMUT, this))
+        if (mutator(&ind1_new, config->CONFIG_PMUT, this, -1))
           ind1_new.evaluate = 1;
-        if (mutator(&ind2_new, config->CONFIG_PMUT, this))
+        if (mutator(&ind2_new, config->CONFIG_PMUT, this, -1))
           ind2_new.evaluate = 1;
         // umisteni potomku do nove populace
         next_population[i] = ind1_new;
@@ -216,11 +230,16 @@ void initialize(GA_chromosome *genome, Solver *solver)
 }
 
 // mutace
-BOOL mutator(GA_chromosome *genome, UINT _pmut, Solver *solver)
+BOOL mutator(GA_chromosome *genome, UINT _pmut, Solver *solver, int mutagens)
 {
+  if (mutagens == -1)
+  {
+    mutagens = solver->config->CONFIG_MUTAGENES;
+  }
+  
   if (urandom(0, solver->config->unit) <= _pmut) // mutace s pravdepodobnosti _pmut
   {
-    for (int i = 0; i < solver->config->CONFIG_MUTAGENES; i++)
+    for (int i = 0; i < mutagens; i++)
     {
       switch (urandom(1, 2))
       {
@@ -275,8 +294,8 @@ BOOL stop(Config *config, Solver *solver)
   {
     if (config->CONFIG_DEBUG)
     {
-      printf("END; generation=%d\n", solver->generation);
-      gprint(&solver->best, solver);
+      // printf("END; generation=%d\n", solver->generation);
+      // gprint(&solver->best, solver);
       std::cout << "PMUT:" << config->CONFIG_PMUT << "; ";
       std::cout << "MUTAGENES:" << config->CONFIG_MUTAGENES << "; ";
       std::cout << "TOUR:" << config->CONFIG_TOUR << "; ";
@@ -365,8 +384,11 @@ void mutatorChangeRouteSchedule(GA_chromosome *genome, Solver *solver)
   if (route1 == -1)
     return; // finding of route was not successful
 
+  for (int i = 0; i < solver->config->CONFIG_MUTAGENE_PER_ROUTE; i++)
+  {
   // swapNeighborsInRoute(genome, route1, solver->task->capacity_of_vehicles, solver->task->demands);
-  swapLocations(genome, route1, solver->task->capacity_of_vehicles, solver->task->demands);
+    swapLocations(genome, route1, solver->task->capacity_of_vehicles, solver->task->demands);
+  }
 }
 
 void test(GA_chromosome *genome, Solver *solver)
