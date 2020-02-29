@@ -10,6 +10,7 @@ typedef int BOOL;
 typedef struct {
     std::vector<UINT> locations;
     std::vector<int> utilization;
+    std::vector<int> cuml_duration;
     UINT route_length;
     UINT cost;
     UINT duration;

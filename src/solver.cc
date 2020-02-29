@@ -62,16 +62,34 @@ bool Solver::Solve()
       {
         best = offs[ofx[0]];
       }
-      // pop[0] = best; // elitismus
-      for (int i = 0; i < config->CONFIG_MI; i++) {
-        if (ofx[i] < 0)
-        {
-          next_pop[i] = pop[(ofx[i]+1)*(-1)];
-        } else {
-          next_pop[i] = offs[ofx[i]];
+      int start = 0;
+      if (config->CONFIG_ES_ELITISM)
+      {
+        pop[0] = best; // elitismus
+        start = 1;
+      }
+      
+      if (config->CONFIG_ES_PLUS)
+      {
+        for (int i = start; i < config->CONFIG_MI; i++) {
+          if (ofx[i] < 0)
+          {
+            next_pop[i] = pop[(ofx[i]+1)*(-1)];
+          } else {
+            next_pop[i] = offs[ofx[i]];
+          }
+        }
+        pop = next_pop;
+      } else {
+        for (int i = start; i < config->CONFIG_MI; i++) {
+          if (config->CONFIG_ES_ELITISM)
+          {
+            pop[i] = offs[ofx[i-1]];
+          } else {
+            pop[i] = offs[ofx[i]];
+          }
         }
       }
-      pop = next_pop;
 
     } while (!stop(this->config, this));
   } else {

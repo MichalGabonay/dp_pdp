@@ -57,12 +57,12 @@ bool Task::FetchTask(std::string input_file)
       demands.push_back(locations[locations[i][8]][3]);
 
       // // Case if I decided to solve problem wit TW *******************
-      // open_times.push_back(locations->at(i)[4]);
-      // open_times.push_back(locations->at(locations->at(i)[8])[4]);
-      // close_times.push_back(locations->at(i)[5]);
-      // close_times.push_back(locations->at(locations->at(i)[8])[5]);
-      // service_times.push_back(locations->at(i)[6]);
-      // service_times.push_back(locations->at(locations->at(i)[8])[6]);
+      open_times.push_back(locations[i][4]);
+      open_times.push_back(locations[locations[i][8]][4]);
+      close_times.push_back(locations[i][5]);
+      close_times.push_back(locations[locations[i][8]][5]);
+      service_times.push_back(locations[i][6]);
+      service_times.push_back(locations[locations[i][8]][6]);
       // // **************************************************************
     }
   }

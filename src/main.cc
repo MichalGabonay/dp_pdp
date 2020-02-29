@@ -29,38 +29,41 @@ unsigned int rand_init()
 
 int main()
 {
-    seed = rand_init();
-    // seed = 1970651133;
-    // srand(seed);
-
-    std::chrono::_V2::system_clock::time_point time_beggining;
-    std::chrono::_V2::system_clock::time_point time_end;
-    time_beggining = std::chrono::high_resolution_clock::now();
-    Task task = Task();
-    Config config = Config();
-
-    if (!task.FetchTask(config.INPUT_FILE))
+    for (size_t i = 0; i < 10; i++)
     {
-        std::cout << "Failed to proccess input." << std::endl;
-        return 1;
-    }
-    
-    Solver solver = Solver(&task, &config);
+        seed = rand_init();
+        // seed = 1970651133;
+        // srand(seed);
 
-    if (!solver.Solve())
-    {
-        std::cout << "Failed to solve the problem." << std::endl;
-        return 1;
-    }
+        std::chrono::_V2::system_clock::time_point time_beggining;
+        std::chrono::_V2::system_clock::time_point time_end;
+        time_beggining = std::chrono::high_resolution_clock::now();
+        Task task = Task();
+        Config config = Config();
 
-    time_end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(time_end - time_beggining).count();
-    duration = duration / 1000000; // in seconds
-    
-    if (config.CONFIG_RESULT_SUMMARY)
-    {
-        printf("%d;summary;%f;%f;%" PRId64 ";%u\n", getpid(), solver.best.fitness, solver.best.cost, duration, seed);
-        // printf("%f\n", solver.best.fitness);
+        if (!task.FetchTask(config.INPUT_FILE))
+        {
+            std::cout << "Failed to proccess input." << std::endl;
+            return 1;
+        }
+        
+        Solver solver = Solver(&task, &config);
+
+        if (!solver.Solve())
+        {
+            std::cout << "Failed to solve the problem." << std::endl;
+            return 1;
+        }
+
+        time_end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(time_end - time_beggining).count();
+        duration = duration / 1000000; // in seconds
+        
+        if (config.CONFIG_RESULT_SUMMARY)
+        {
+            printf("%d;summary;%f;%f;%" PRId64 ";%u\n", getpid(), solver.best.fitness, solver.best.cost, duration, seed);
+            // printf("%f\n", solver.best.fitness);
+        }
     }
     
     return 0;

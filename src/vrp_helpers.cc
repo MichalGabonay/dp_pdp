@@ -70,27 +70,6 @@ void swapNeighborsInRoute (GA_chromosome *g, UINT vehicle, UINT vehicle_capacity
     }
     is_possible_swap = true;
   }
-  // if (index == g->routes[vehicle].route_length - 1)
-  // {
-    // ****************
-    // printf("Vehicle %d (%d): ", vehicle, g->routes[vehicle].route_length);
-    // for (size_t j = 0; j < g->routes[vehicle].route_length; j++)
-    // {
-    //   if (j != g->routes[vehicle].route_length - 1)
-    //   {
-    //     printf("%d[%d], ", g->routes[vehicle].locations[j], g->routes[vehicle].utilization[j]);
-    //   }
-    //   else
-    //   {
-    //     printf("%d[%d]", g->routes[vehicle].locations[j], g->routes[vehicle].utilization[j]);
-    //   }
-    // }
-    // printf("\n");
-    // ****************
-
-    // std::cout << index << "  " << g->routes[vehicle].route_length << "  " << std::endl;
-    // std::cout << value << "  " << value_of_switched << "  " << std::endl;
-  // }
   
   swapArrayValues(&g->routes[vehicle].locations, index, index + 1);
   g->routes[vehicle].utilization[index] = g->routes[vehicle].utilization[index - 1] + demands[value_of_switched];

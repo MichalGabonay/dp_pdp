@@ -34,9 +34,9 @@ public:
   std::vector<int> demands;
   std::vector<int> locations_map;
   std::vector<std::vector<int>> locations;
-  // std::vector<int> open_times;
-  // std::vector<int> close_times;
-  // std::vector<int> service_times;
+  std::vector<int> open_times;
+  std::vector<int> close_times;
+  std::vector<int> service_times;
 
   Task();
   bool FetchTask(std::string input_file);
