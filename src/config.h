@@ -25,6 +25,7 @@ public:
   std::string CONFIG_EVOLUTION_TYPE;
   std::string INPUT_FILE;
   unsigned int unit;
+  double CONFIG_MAX_ROUTE_DURATION;
 
   Config();
 };

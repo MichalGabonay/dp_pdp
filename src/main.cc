@@ -29,8 +29,8 @@ unsigned int rand_init()
 
 int main()
 {
-    for (size_t i = 0; i < 10; i++)
-    {
+    // for (size_t i = 0; i < 10; i++)
+    // {
         seed = rand_init();
         // seed = 1970651133;
         // srand(seed);
@@ -64,7 +64,7 @@ int main()
             printf("%d;summary;%f;%f;%" PRId64 ";%u\n", getpid(), solver.best.fitness, solver.best.cost, duration, seed);
             // printf("%f\n", solver.best.fitness);
         }
-    }
+    // }
     
     return 0;
 }

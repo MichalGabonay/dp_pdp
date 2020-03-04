@@ -193,15 +193,15 @@ void gprint(GA_chromosome *genome, Solver *solver)
       {
         if (j != genome->routes[i].route_length - 1)
         {
-          printf("%d[%d], ", genome->routes[i].locations[j], genome->routes[i].utilization[j]);
+          printf("%d[%d][%f], ", genome->routes[i].locations[j], genome->routes[i].utilization[j], genome->routes[i].cuml_duration[j]);
         }
         else
         {
-          printf("%d[%d]", genome->routes[i].locations[j], genome->routes[i].utilization[j]);
+          printf("%d[%d][%f]", genome->routes[i].locations[j], genome->routes[i].utilization[j], genome->routes[i].cuml_duration[j]);
         }
       }
       printf("\n");
-      printf("cost: %d  --  duration: %d  --  distance: %d \n\n", genome->routes[i].cost, genome->routes[i].duration, genome->routes[i].distance);
+      printf("cost: %d  --  duration: %f  --  distance: %d \n\n", genome->routes[i].cost, genome->routes[i].duration, genome->routes[i].distance);
       used_vehicles++;
     }
   }
@@ -218,29 +218,63 @@ void initialize(GA_chromosome *genome, Solver *solver)
     route.distance = 0;
     route.duration = 0;
     route.route_length = 0;
+    
     genome->routes.push_back(route);
     genome->routes[i].locations.push_back(0);
     genome->routes[i].utilization.push_back(0);
+    genome->routes[i].cuml_duration.push_back(0);
     genome->routes[i].route_length = 1;
+    genome->routes[i].cost_in.push_back(0);
   }
   genome->map_route_position.push_back(0);
   for (UINT i = 1; i < solver->task->locations_map.size(); i += 2)
   {
-    UINT vehicle = urandom(0, solver->task->number_of_vehicles - 1);
-    UINT next = genome->routes[vehicle].route_length;
+    bool succes_insert = false;
+    while (!succes_insert)
+    {
+      UINT vehicle = urandom(0, solver->task->number_of_vehicles - 1);
+      UINT prev = genome->routes[vehicle].route_length - 1;
+      UINT next = genome->routes[vehicle].route_length;
 
-    genome->routes[vehicle].locations.push_back(i);
-    genome->routes[vehicle].utilization.push_back(genome->routes[vehicle].utilization[next - 1] + solver->task->demands[i]);
-    genome->map_route_position.push_back(next);
+      double route_to_pickup = solver->task->matrix[genome->routes[vehicle].locations[prev] * solver->task->matrix_order + i];
+      double route_to_delivery = solver->task->matrix[i * solver->task->matrix_order + i + 1];
+      double route_to_depot = solver->task->matrix[(i + 1) * solver->task->matrix_order];
+      if (genome->routes[vehicle].duration + route_to_pickup + route_to_delivery + route_to_depot > solver->config->CONFIG_MAX_ROUTE_DURATION)
+      {
+        continue;
+      } else {
+        succes_insert = true;
+      }
+      genome->routes[vehicle].cost_out.push_back(route_to_pickup); // cost out from previous location
+      genome->routes[vehicle].cost_in.push_back(route_to_pickup);
+    
+      genome->routes[vehicle].locations.push_back(i);
+      genome->routes[vehicle].duration += route_to_pickup;
+      genome->routes[vehicle].utilization.push_back(genome->routes[vehicle].utilization[next - 1] + solver->task->demands[i]);
+      genome->routes[vehicle].cuml_duration.push_back(genome->routes[vehicle].duration);
+      genome->map_route_position.push_back(next);
 
-    genome->routes[vehicle].locations.push_back(i + 1);
-    genome->routes[vehicle].utilization.push_back(genome->routes[vehicle].utilization[next] + solver->task->demands[i + 1]);
-    genome->map_route_position.push_back(next + 1);
+      genome->routes[vehicle].cost_out.push_back(route_to_delivery); // cost out from previous location
+      genome->routes[vehicle].cost_in.push_back(route_to_delivery);
 
-    genome->routes[vehicle].route_length += 2;
+      genome->routes[vehicle].locations.push_back(i + 1);
+      genome->routes[vehicle].duration += route_to_delivery;
+      genome->routes[vehicle].utilization.push_back(genome->routes[vehicle].utilization[next] + solver->task->demands[i + 1]);
+      genome->routes[vehicle].cuml_duration.push_back(genome->routes[vehicle].duration);
+      genome->map_route_position.push_back(next + 1);
+
+      genome->routes[vehicle].route_length += 2;
+    }    
   }
   for (int i = 0; i < solver->task->number_of_vehicles; i++)
   {
+    int last_customer = genome->routes[i].route_length - 1;
+    double route_to_depot = solver->task->matrix[genome->routes[i].locations[last_customer] * solver->task->matrix_order];
+    genome->routes[i].cost_out.push_back(route_to_depot); // cost out from previous location
+    genome->routes[i].cost_in.push_back(route_to_depot);
+    genome->routes[i].cost_out.push_back(0);
+    genome->routes[i].duration += route_to_depot;
+    genome->routes[i].cuml_duration.push_back(genome->routes[i].duration);
     genome->routes[i].locations.push_back(0);
     genome->routes[i].utilization.push_back(0);
     genome->routes[i].route_length++;
@@ -320,13 +354,17 @@ BOOL stop(Config *config, Solver *solver)
       printf("Fitness = %f | Total distance = %.2f  in generation %d\n", solver->best_ever, 1000 / solver->best_ever, solver->generation);
     }
   }
+  if (config->CONFIG_DEBUG && solver->generation % 1000 == 0)
+    {
+      printf("Fitness = %f | Total distance = %.2f  in generation %d\n", solver->best_ever, 1000 / solver->best_ever, solver->generation);
+    }
 
   if (config->CONFIG_GENERATIONS > 0 && solver->generation == config->CONFIG_GENERATIONS)
   {
     if (config->CONFIG_DEBUG)
     {
       // printf("END; generation=%d\n", solver->generation);
-      // gprint(&solver->best, solver);
+      gprint(&solver->best, solver);
       std::cout << "PMUT:" << config->CONFIG_PMUT << "; ";
       std::cout << "MUTAGENES:" << config->CONFIG_MUTAGENES << "; ";
       std::cout << "TOUR:" << config->CONFIG_TOUR << "; ";
@@ -393,20 +431,20 @@ void mutatorMoveBetweenVehicles(GA_chromosome *genome, Solver *solver)
     pickup = value - 1;
     delivery = value;
     index_2 = genome->map_route_position[pickup];
-    deleteFromRoute(genome, vehicle_1, index_1, solver->task->demands[delivery]);
-    deleteFromRoute(genome, vehicle_1, index_2, solver->task->demands[pickup]);
+    deleteFromRoute(genome, vehicle_1, index_1, solver->task->demands[delivery], solver->task);
+    deleteFromRoute(genome, vehicle_1, index_2, solver->task->demands[pickup], solver->task);
   }
   else
   {
     pickup = value;
     delivery = value + 1;
     index_2 = genome->map_route_position[delivery];
-    deleteFromRoute(genome, vehicle_1, index_2, solver->task->demands[delivery]);
-    deleteFromRoute(genome, vehicle_1, index_1, solver->task->demands[pickup]);
+    deleteFromRoute(genome, vehicle_1, index_2, solver->task->demands[delivery], solver->task);
+    deleteFromRoute(genome, vehicle_1, index_1, solver->task->demands[pickup], solver->task);
   }
   UINT random_index = urandom(1, v_2_size - 1);
-  insertToRoute(genome, vehicle_2, random_index, pickup, solver->task->demands[pickup], solver->task->capacity_of_vehicles);
-  insertToRoute(genome, vehicle_2, random_index + 1, delivery, solver->task->demands[delivery], solver->task->capacity_of_vehicles);
+  UINT new_index = insertToRoute(genome, vehicle_2, random_index, pickup, solver->task->demands[pickup], solver->task);
+  insertToRoute(genome, vehicle_2, new_index + 1, delivery, solver->task->demands[delivery], solver->task);
 }
 
 void mutatorChangeRouteSchedule(GA_chromosome *genome, Solver *solver)
@@ -417,8 +455,10 @@ void mutatorChangeRouteSchedule(GA_chromosome *genome, Solver *solver)
 
   for (int i = 0; i < solver->config->CONFIG_MUTAGENE_PER_ROUTE; i++)
   {
+    // printRoute(genome->routes[route1], route1);
   // swapNeighborsInRoute(genome, route1, solver->task->capacity_of_vehicles, solver->task->demands);
-    swapLocations(genome, route1, solver->task->capacity_of_vehicles, solver->task->demands);
+    swapLocations(genome, route1, solver->task->capacity_of_vehicles, solver->task->demands, solver->task);
+    // printRoute(genome->routes[route1], route1);
   }
 }
 
