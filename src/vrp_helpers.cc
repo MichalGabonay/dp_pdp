@@ -83,79 +83,86 @@ void realocateCustomerInRoute(GA_chromosome *g, int vehicle, UINT pickup, Task *
 }
 
 void inserCustomerToRoute(GA_chromosome *g, int vehicle, UINT pickup, Task *task) {
-  double best_insert = 999999999;
-  std::pair<int, int> best_insert_index;
-  double min_pickup, min_delivery, min_togather;
-  int min_pickup_index, min_delivery_index, min_togather_index;
-
-  bool reset_local_mins = true;
-  for (size_t i = 1; i < g->routes[vehicle].route_length; i++)
+  if (g->routes[vehicle].route_length <= 2)
   {
-    double old_route = task->matrix[g->routes[vehicle].locations[i-1] * task->matrix_order + g->routes[vehicle].locations[i]];
-    double new_pickup_in = task->matrix[g->routes[vehicle].locations[i-1] * task->matrix_order + pickup];
-    double new_pickup_out = task->matrix[pickup * task->matrix_order + g->routes[vehicle].locations[i]];
-    double new_delivery_in = task->matrix[g->routes[vehicle].locations[i-1] * task->matrix_order + pickup + 1];
-    double new_delivery_out = task->matrix[(pickup + 1) * task->matrix_order + g->routes[vehicle].locations[i]];
-    double pickup_change = new_pickup_in + new_pickup_out - old_route;
-    double delivery_change = new_delivery_in + new_delivery_out - old_route;
-    double togather_change = new_pickup_in + task->matrix[pickup * task->matrix_order + pickup + 1] + new_delivery_out - old_route;
+    insertToRoute(g, vehicle, 1, pickup, task->demands[pickup], task);
+    insertToRoute(g, vehicle, 2, pickup+1, task->demands[pickup+1], task);
+  } else {
+    double best_insert = 999999999;
+    std::pair<int, int> best_insert_index;
+    double min_pickup, min_delivery, min_togather;
+    int min_pickup_index, min_delivery_index, min_togather_index;
 
-    if (reset_local_mins)
+    bool reset_local_mins = true;
+    for (size_t i = 1; i < g->routes[vehicle].route_length; i++)
     {
-      reset_local_mins = false;
-      min_pickup = pickup_change;
-      min_delivery = delivery_change;
-      min_togather = togather_change;
-      min_pickup_index = i;
-      min_delivery_index = i;
-      min_togather_index = i;
-    } else {
-      if (pickup_change >= min_pickup || delivery_change >= min_delivery)
+      double old_route = task->matrix[g->routes[vehicle].locations[i-1] * task->matrix_order + g->routes[vehicle].locations[i]];
+      double new_pickup_in = task->matrix[g->routes[vehicle].locations[i-1] * task->matrix_order + pickup];
+      double new_pickup_out = task->matrix[pickup * task->matrix_order + g->routes[vehicle].locations[i]];
+      double new_delivery_in = task->matrix[g->routes[vehicle].locations[i-1] * task->matrix_order + pickup + 1];
+      double new_delivery_out = task->matrix[(pickup + 1) * task->matrix_order + g->routes[vehicle].locations[i]];
+      double pickup_change = new_pickup_in + new_pickup_out - old_route;
+      double delivery_change = new_delivery_in + new_delivery_out - old_route;
+      double togather_change = new_pickup_in + task->matrix[pickup * task->matrix_order + pickup + 1] + new_delivery_out - old_route;
+
+      if (reset_local_mins)
       {
-        if (pickup_change < min_pickup)
-        {
-          min_pickup = pickup_change;
-          min_pickup_index = i;
-          min_delivery = delivery_change;
-          min_delivery_index = i;
-        } else if (delivery_change < min_delivery)
-        {
-          min_delivery = delivery_change;
-          min_delivery_index = i;
-        }
-      }
-      if (togather_change < min_togather)
-      {
+        reset_local_mins = false;
+        min_pickup = pickup_change;
+        min_delivery = delivery_change;
         min_togather = togather_change;
+        min_pickup_index = i;
+        min_delivery_index = i;
         min_togather_index = i;
-      }
-    }
-
-    if (g->routes[vehicle].utilization[i] + task->demands[pickup] > task->capacity_of_vehicles || i == g->routes[vehicle].route_length - 1)
-    {
-      if (min_pickup == min_delivery || min_pickup + min_delivery > min_togather)
-      {
-        if (best_insert >= min_togather)
-        {
-          best_insert = min_togather;
-          best_insert_index = std::make_pair(min_togather_index, min_togather_index);
-        }
       } else {
-        if (best_insert >= min_pickup_index + min_delivery_index)
+        if (pickup_change >= min_pickup || delivery_change >= min_delivery)
         {
-          best_insert = min_pickup + min_delivery;
-          best_insert_index = std::make_pair(min_pickup_index, min_delivery_index);
+          if (pickup_change < min_pickup)
+          {
+            min_pickup = pickup_change;
+            min_pickup_index = i;
+            min_delivery = delivery_change;
+            min_delivery_index = i;
+          } else if (delivery_change < min_delivery)
+          {
+            min_delivery = delivery_change;
+            min_delivery_index = i;
+          }
+        }
+        if (togather_change < min_togather)
+        {
+          min_togather = togather_change;
+          min_togather_index = i;
         }
       }
-      reset_local_mins = true;
+
+      if (g->routes[vehicle].utilization[i] + task->demands[pickup] > task->capacity_of_vehicles || i == g->routes[vehicle].route_length - 1)
+      {
+        if (min_pickup == min_delivery || min_pickup + min_delivery > min_togather)
+        {
+          if (best_insert >= min_togather)
+          {
+            best_insert = min_togather;
+            best_insert_index = std::make_pair(min_togather_index, min_togather_index);
+          }
+        } else {
+          if (best_insert >= min_pickup_index + min_delivery_index)
+          {
+            best_insert = min_pickup + min_delivery;
+            best_insert_index = std::make_pair(min_pickup_index, min_delivery_index);
+          }
+        }
+        reset_local_mins = true;
+      }
+
+      // std::cout << old_route << " " << new_pickup_in << " " << new_pickup_out << " " << new_delivery_in << " " << new_delivery_out << " " << std::endl;
     }
+    // std::cout << best_insert << " " << best_insert_index.first << " " << best_insert_index.second << std::endl;
 
-    // std::cout << old_route << " " << new_pickup_in << " " << new_pickup_out << " " << new_delivery_in << " " << new_delivery_out << " " << std::endl;
+    insertToRoute(g, vehicle, best_insert_index.first, pickup, task->demands[pickup], task);
+    insertToRoute(g, vehicle, best_insert_index.second+1, pickup+1, task->demands[pickup+1], task);
   }
-  // std::cout << best_insert << " " << best_insert_index.first << " " << best_insert_index.second << std::endl;
-
-  insertToRoute(g, vehicle, best_insert_index.first, pickup, task->demands[pickup], task);
-  insertToRoute(g, vehicle, best_insert_index.second+1, pickup+1, task->demands[pickup+1], task);
+  
   recalculateRoute(g, vehicle, task);
 }
 

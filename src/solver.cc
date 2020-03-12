@@ -249,7 +249,8 @@ void initialize(GA_chromosome *genome, Solver *solver)
   for (UINT i = 1; i < solver->task->locations_map.size(); i += 2)
   {
     bool succes_insert = false;
-    UINT vehicle = urandom(0, solver->task->number_of_vehicles - 1);
+    // UINT vehicle = urandom(0, solver->task->number_of_vehicles - 1);
+    UINT vehicle = 0;
     int tries = 0;
     while (!succes_insert && tries < solver->task->number_of_vehicles)
     {

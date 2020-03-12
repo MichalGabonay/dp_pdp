@@ -29,8 +29,9 @@ unsigned int rand_init()
 
 int main()
 {
-    // for (size_t i = 0; i < 10; i++)
+    // for (size_t i = 0; i < 100; i++)
     // {
+    //     std::cout << i << std::endl;
         seed = rand_init();
         // std::cout << seed << std::endl;
         // seed = 179062014;
