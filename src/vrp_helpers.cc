@@ -1,35 +1,174 @@
 #include "vrp_helpers.h"
 
+int selectRoute(GA_chromosome *genome, int number_of_vehicles) {
+  int vehicle = 0;
+  UINT v_size = 0;
+  vehicle = urandom(0, number_of_vehicles - 1);
+  while (true)
+  {
+    v_size = genome->routes[vehicle].route_length;
+    if (v_size > 4)
+      break;
+    
+    vehicle = (vehicle + 1) % number_of_vehicles;
+  }
+  return vehicle;
+}
+
+int selectRouteByWeight(GA_chromosome *g) {
+  std::vector<double> routeRatios;
+  for (size_t i = 0; i < g->routes.size(); i++)
+  {
+    routeRatios.push_back(g->routes[i].duration/g->routes[i].route_length);
+  }
+  std::mt19937 gen(rand());
+  std::discrete_distribution<> dist(routeRatios.begin(), routeRatios.end());
+  return dist(gen);
+}
+
+int selectLocationByCost(Route *route) {
+  std::vector<double> locationsRatios;
+  for (size_t i = 0; i < route->route_length; i++)
+  {
+    if (i == 0 || i == route->route_length - 1)
+    {
+      locationsRatios.push_back(0);
+    } else {
+      locationsRatios.push_back(route->cost_in[i] + route->cost_out[i]);
+    }
+  }
+
+  std::mt19937 gen(rand());
+  std::discrete_distribution<> dist(locationsRatios.begin(), locationsRatios.end());
+  return dist(gen);
+}
+
+int selectRandomCustomer(Route *route) {
+  int index = urandom(1, route->route_length - 2);
+  int location = route->locations[index];
+  if (location % 2 == 0)
+  {
+    return location - 1;
+  } else {
+    return location;
+  }
+}
+
+int selectCustomerByCost(Route *route, std::vector<UINT> map_route_position) {
+  std::vector<double> locationsRatios;
+  std::vector<double> map;
+  for (size_t i = 0; i < route->route_length; i++)
+  {
+    if (i > 0 && i < route->route_length - 1 && route->locations[i] % 2 == 1)
+    {
+      UINT d_i = map_route_position[i+1];
+      locationsRatios.push_back(route->cost_in[i] + route->cost_out[i] + route->cost_in[d_i] + route->cost_out[d_i]);
+      map.push_back(route->locations[i]);
+    }
+  }
+
+  std::mt19937 gen(rand());
+  std::discrete_distribution<> dist(locationsRatios.begin(), locationsRatios.end());
+  return map[dist(gen)];
+}
+
+void realocateCustomerInRoute(GA_chromosome *g, int vehicle, UINT pickup, Task *task) {
+  UINT pickup_index = g->map_route_position[pickup];
+  UINT delivery_index = g->map_route_position[pickup+1];
+
+  deleteFromRoute(g, vehicle, delivery_index);
+  deleteFromRoute(g, vehicle, pickup_index);
+  recalculateRoute(g, vehicle, task);
+  inserCustomerToRoute(g, vehicle, pickup, task);
+}
+
+void inserCustomerToRoute(GA_chromosome *g, int vehicle, UINT pickup, Task *task) {
+  double best_insert = 999999999;
+  std::pair<int, int> best_insert_index;
+  double min_pickup, min_delivery, min_togather;
+  int min_pickup_index, min_delivery_index, min_togather_index;
+
+  bool reset_local_mins = true;
+  for (size_t i = 1; i < g->routes[vehicle].route_length; i++)
+  {
+    double old_route = task->matrix[g->routes[vehicle].locations[i-1] * task->matrix_order + g->routes[vehicle].locations[i]];
+    double new_pickup_in = task->matrix[g->routes[vehicle].locations[i-1] * task->matrix_order + pickup];
+    double new_pickup_out = task->matrix[pickup * task->matrix_order + g->routes[vehicle].locations[i]];
+    double new_delivery_in = task->matrix[g->routes[vehicle].locations[i-1] * task->matrix_order + pickup + 1];
+    double new_delivery_out = task->matrix[(pickup + 1) * task->matrix_order + g->routes[vehicle].locations[i]];
+    double pickup_change = new_pickup_in + new_pickup_out - old_route;
+    double delivery_change = new_delivery_in + new_delivery_out - old_route;
+    double togather_change = new_pickup_in + task->matrix[pickup * task->matrix_order + pickup + 1] + new_delivery_out - old_route;
+
+    if (reset_local_mins)
+    {
+      reset_local_mins = false;
+      min_pickup = pickup_change;
+      min_delivery = delivery_change;
+      min_togather = togather_change;
+      min_pickup_index = i;
+      min_delivery_index = i;
+      min_togather_index = i;
+    } else {
+      if (pickup_change >= min_pickup || delivery_change >= min_delivery)
+      {
+        if (pickup_change < min_pickup)
+        {
+          min_pickup = pickup_change;
+          min_pickup_index = i;
+          min_delivery = delivery_change;
+          min_delivery_index = i;
+        } else if (delivery_change < min_delivery)
+        {
+          min_delivery = delivery_change;
+          min_delivery_index = i;
+        }
+      }
+      if (togather_change < min_togather)
+      {
+        min_togather = togather_change;
+        min_togather_index = i;
+      }
+    }
+
+    if (g->routes[vehicle].utilization[i] + task->demands[pickup] > task->capacity_of_vehicles || i == g->routes[vehicle].route_length - 1)
+    {
+      if (min_pickup == min_delivery || min_pickup + min_delivery > min_togather)
+      {
+        if (best_insert >= min_togather)
+        {
+          best_insert = min_togather;
+          best_insert_index = std::make_pair(min_togather_index, min_togather_index);
+        }
+      } else {
+        if (best_insert >= min_pickup_index + min_delivery_index)
+        {
+          best_insert = min_pickup + min_delivery;
+          best_insert_index = std::make_pair(min_pickup_index, min_delivery_index);
+        }
+      }
+      reset_local_mins = true;
+    }
+
+    // std::cout << old_route << " " << new_pickup_in << " " << new_pickup_out << " " << new_delivery_in << " " << new_delivery_out << " " << std::endl;
+  }
+  // std::cout << best_insert << " " << best_insert_index.first << " " << best_insert_index.second << std::endl;
+
+  insertToRoute(g, vehicle, best_insert_index.first, pickup, task->demands[pickup], task);
+  insertToRoute(g, vehicle, best_insert_index.second+1, pickup+1, task->demands[pickup+1], task);
+  recalculateRoute(g, vehicle, task);
+}
+
 // generuje cele cislo v rozsahu low-high vcetne
 UINT urandom(UINT low, UINT high)
 {
   return rand() % (high - low + 1) + low;
 }
 
-
-double travelCost(std::vector<double> matrix, int matrix_order, UINT from, UINT to) {
-  return matrix[from * matrix_order + to];
-}
-
 void swapArrayValues(std::vector<UINT> *locations, UINT position1, UINT position2) {
     UINT value1 = locations->at(position1);
     locations->at(position1) = locations->at(position2);
     locations->at(position2) = value1;
-}
-
-void printArray(UINT *array, UINT array_size) {
-  for (size_t j = 0; j < array_size; j++)
-    {
-        if (j != array_size - 1)
-        {
-            printf("%d, ", array[j]);
-        }
-        else
-        {
-            printf("%d", array[j]);
-        }
-    }
-    printf("\n");
 }
 
 void printRoute(Route route, int vehicle_index) {
@@ -49,52 +188,20 @@ void printRoute(Route route, int vehicle_index) {
   printf("cost: %d  --  duration: %f  --  distance: %d \n\n", route.cost, route.duration, route.distance);
 }
 
-void swapNeighborsInRoute (GA_chromosome *g, UINT vehicle, UINT vehicle_capacity, std::vector<int> demands) {
-  bool is_possible_swap = false;
-  UINT value, value_of_switched;
-
-  UINT index = urandom(1, g->routes[vehicle].route_length - 3);
-  while (!is_possible_swap) {
-    value = g->routes[vehicle].locations[index];
-    value_of_switched = g->routes[vehicle].locations[index + 1];
-
-    if (value == value_of_switched - 1)
-    {
-      index++;
-      if (index > g->routes[vehicle].route_length - 3)
-      {
-        return;
-      }
-      
-      continue;
-    }
-    if (g->routes[vehicle].utilization[index - 1] + demands[value_of_switched] > (int) vehicle_capacity)
-    {
-      index++;
-      continue;
-    }
-    is_possible_swap = true;
-  }
-  
-  swapArrayValues(&g->routes[vehicle].locations, index, index + 1);
-  g->routes[vehicle].utilization[index] = g->routes[vehicle].utilization[index - 1] + demands[value_of_switched];
-  g->map_route_position[value]++;
-  g->map_route_position[value_of_switched]--;
-}
-
 void swapLocations (GA_chromosome *g, UINT vehicle, UINT vehicle_capacity, std::vector<int> demands, Task* task) {
   UINT value, value_of_switched, index_1, index_2;
   int number_of_tries = 0;
   bool found_valid = false;
   while (number_of_tries < 5 && found_valid == false) { // 5 tries to find valid, than it will take invalid which will be repaired
     number_of_tries++;
-    index_1 = urandom(1, g->routes[vehicle].route_length - 3);
+    // index_1 = urandom(1, g->routes[vehicle].route_length - 2);
+    index_1 = selectLocationByCost(&g->routes[vehicle]);
     value = g->routes[vehicle].locations[index_1];
     if (value % 2 == 0)
     {
       UINT index_1_pair = g->map_route_position[value - 1];
       // std::cout << index_1 << "(" << value << ") : " << index_1_pair + 1 << " - " << g->routes[vehicle].route_length - 3 << std::endl;
-      index_2 = urandom(index_1_pair + 1, g->routes[vehicle].route_length - 3);
+      index_2 = urandom(index_1_pair + 1, g->routes[vehicle].route_length - 2);
     } else {
       UINT index_1_pair = g->map_route_position[value + 1];
       index_2 = urandom(1, index_1_pair - 1);
@@ -102,7 +209,7 @@ void swapLocations (GA_chromosome *g, UINT vehicle, UINT vehicle_capacity, std::
     if (index_1 == index_2) { // selected same index, dont count as a try
       number_of_tries--;
       continue;
-    } 
+    }
     
     value_of_switched = g->routes[vehicle].locations[index_2];
     if (value_of_switched % 2 == 0)
@@ -121,15 +228,7 @@ void swapLocations (GA_chromosome *g, UINT vehicle, UINT vehicle_capacity, std::
     }
     found_valid = true;
   }
-
-  if (index_1 < index_2)
-  {
-    /* code */
-  } else {
-
-  }
   
-
   swapArrayValues(&g->routes[vehicle].locations, index_1, index_2);
 
   g->map_route_position[value] = index_2; 
@@ -154,7 +253,7 @@ void recalculateRoute (GA_chromosome *g, UINT vehicle, Task* task) {
     {
       g->routes[vehicle].cost_in[i] = g->routes[vehicle].cost_out[i - 1];
       g->routes[vehicle].cost_out[i] = 0;
-      g->routes[vehicle].cuml_duration[i] += g->routes[vehicle].cost_in[i];
+      g->routes[vehicle].cuml_duration[i] = g->routes[vehicle].cuml_duration[i - 1] + g->routes[vehicle].cost_in[i];
       g->routes[vehicle].utilization[i] = 0;
       g->routes[vehicle].duration += g->routes[vehicle].cost_in[i];
 
@@ -162,74 +261,24 @@ void recalculateRoute (GA_chromosome *g, UINT vehicle, Task* task) {
     {
       g->routes[vehicle].cost_in[i] = g->routes[vehicle].cost_out[i - 1];
       g->routes[vehicle].cost_out[i] = task->matrix[g->routes[vehicle].locations[i] * task->matrix_order + g->routes[vehicle].locations[i+1]];
-      g->routes[vehicle].cuml_duration[i] += g->routes[vehicle].cost_in[i];
-      g->routes[vehicle].utilization[i] += task->demands[g->routes[vehicle].locations[i]];
+      g->routes[vehicle].cuml_duration[i] = g->routes[vehicle].cuml_duration[i - 1] + g->routes[vehicle].cost_in[i];
+      g->routes[vehicle].utilization[i] = g->routes[vehicle].utilization[i - 1] + task->demands[g->routes[vehicle].locations[i]];
       g->routes[vehicle].duration += g->routes[vehicle].cost_in[i];
     }  
   } 
 }
 
-void moveInsideRoute (GA_chromosome *g, UINT vehicle, UINT index_from, UINT index_to, UINT value, int demand, Task* task) {
-  UINT route_size = g->routes[vehicle].route_length;
+void moveInsideRoute (GA_chromosome *g, UINT vehicle, UINT index_from, UINT index_to, UINT value) {
   if (index_from < index_to) {
-    double without_from = travelCost(task->matrix, task->matrix_order, g->routes[vehicle].locations[index_from - 1], g->routes[vehicle].locations[index_from + 1]);
-    double change1 = without_from - g->routes[vehicle].cost_in[index_from] - g->routes[vehicle].cost_out[index_from];
-    double new_in = travelCost(task->matrix, task->matrix_order, g->routes[vehicle].locations[index_to], value);
-    double new_out = travelCost(task->matrix, value, task->matrix_order, g->routes[vehicle].locations[index_to + 1]);
-    double change2 = new_in + new_out - g->routes[vehicle].cost_in[index_to];
-    double change = change1 + change2;
-
-    g->routes[vehicle].cost_out[index_from - 1] = without_from;
-    if (index_from == index_to + 1)
+    for (size_t i = index_from + 1; i <= index_to; i++)
     {
-      g->routes[vehicle].cost_in[index_from] = without_from;
-      g->routes[vehicle].cost_out[index_from] = new_in;
-      g->routes[vehicle].cuml_duration[index_from] = g->routes[vehicle].cuml_duration[index_from - 1] + without_from;
-
-      g->routes[vehicle].cost_in[index_to] = new_in;
-      g->routes[vehicle].cost_out[index_to] = new_out;
-      g->routes[vehicle].cuml_duration[index_to] = g->routes[vehicle].cuml_duration[index_from] + new_in;
-      g->routes[vehicle].cost_in[index_to+1] = new_out;
-
-      g->map_route_position[g->routes[vehicle].locations[index_to]]--;
-      g->routes[vehicle].locations[index_from] = g->routes[vehicle].locations[index_to];
-      g->routes[vehicle].utilization[index_from] = g->routes[vehicle].utilization[index_to] - demand;
-    } else {
-      for (size_t i = index_from + 1; i <= index_to; i++)
+      if (g->map_route_position[g->routes[vehicle].locations[i]] != 0)
       {
-        if (i == index_from + 1) {
-          g->routes[vehicle].cost_in[i-1] = without_from;
-          g->routes[vehicle].cost_out[i-1] = g->routes[vehicle].cost_out[i];
-          g->routes[vehicle].cuml_duration[i - 1] = g->routes[vehicle].cuml_duration[i] + change1;
-        } else if (i == index_to) {
-          g->routes[vehicle].cost_in[i-1] = g->routes[vehicle].cost_in[i];
-          g->routes[vehicle].cost_out[i-1] = new_in;
-          g->routes[vehicle].cuml_duration[i-1] = g->routes[vehicle].cuml_duration[i] + change1;
-          g->routes[vehicle].cost_in[i] = new_in;
-          g->routes[vehicle].cost_out[i] = new_out;
-          g->routes[vehicle].cuml_duration[i] = g->routes[vehicle].cuml_duration[i-1] + new_in;
-          g->routes[vehicle].cost_in[i+1] = new_out;
-        } else {
-          g->routes[vehicle].cost_in[i-1] = g->routes[vehicle].cost_in[i];
-          g->routes[vehicle].cost_out[i-1] = g->routes[vehicle].cost_out[i];
-          g->routes[vehicle].cuml_duration[i-1] = g->routes[vehicle].cuml_duration[i] + change1;
-        }
-        
-        if (g->map_route_position[g->routes[vehicle].locations[i]] != 0)
-        {
-          g->map_route_position[g->routes[vehicle].locations[i]]--;
-        }
-        g->routes[vehicle].locations[i-1] = g->routes[vehicle].locations[i];
-        g->routes[vehicle].utilization[i-1] = g->routes[vehicle].utilization[i] - demand;
+        g->map_route_position[g->routes[vehicle].locations[i]]--;
       }
+      g->routes[vehicle].locations[i-1] = g->routes[vehicle].locations[i];
     }
-    for (size_t i = index_to; i < route_size; i++)
-    {
-      g->routes[vehicle].cuml_duration[i] = g->routes[vehicle].cuml_duration[i] + change;
-    }  
-    g->routes[vehicle].duration += change;
-  } else 
-  {
+  } else {
     for (size_t i = index_from - 1; i >= index_to; i--)
     {
       if (g->map_route_position[g->routes[vehicle].locations[i]] != 0)
@@ -237,9 +286,7 @@ void moveInsideRoute (GA_chromosome *g, UINT vehicle, UINT index_from, UINT inde
         g->map_route_position[g->routes[vehicle].locations[i]]++; 
       }
       g->routes[vehicle].locations[i+1] = g->routes[vehicle].locations[i];
-      g->routes[vehicle].utilization[i+1] = g->routes[vehicle].utilization[i] + demand;
     }
-    g->routes[vehicle].utilization[index_to] = g->routes[vehicle].utilization[index_to-1] + demand;
   }
 
   g->routes[vehicle].locations[index_to] = value;
@@ -252,12 +299,6 @@ UINT insertToRoute (GA_chromosome *g, UINT vehicle, UINT index, UINT value, int 
   {
     index++;
   }
-
-  double arc_in = travelCost(task->matrix, task->matrix_order, g->routes[vehicle].locations[index - 1], value);
-  double arc_out = travelCost(task->matrix, task->matrix_order, value, g->routes[vehicle].locations[index]);
-  double old_arc = travelCost(task->matrix, task->matrix_order, g->routes[vehicle].locations[index - 1], g->routes[vehicle].locations[index]);
-  double arc_change = arc_in + arc_out - old_arc;
-  
   for (size_t i = route_size - 1; i >= index; i--)
   {
     if (g->map_route_position[g->routes[vehicle].locations[i]] != 0)
@@ -266,107 +307,49 @@ UINT insertToRoute (GA_chromosome *g, UINT vehicle, UINT index, UINT value, int 
     }
     if (i == route_size - 1)
     {
-      if (i == index + 1)
-      {
-        g->routes[vehicle].cost_in.push_back(arc_out);
-      } else {
-        g->routes[vehicle].cost_in.push_back(g->routes[vehicle].cost_in[i]);
-      }
-      g->routes[vehicle].cuml_duration.push_back(g->routes[vehicle].cuml_duration[i] + arc_change);
+      g->routes[vehicle].cost_in.push_back(0);
+      g->routes[vehicle].cuml_duration.push_back(0);
       g->routes[vehicle].cost_out.push_back(0);
+      g->routes[vehicle].utilization.push_back(0);
       g->routes[vehicle].locations.push_back(g->routes[vehicle].locations[i]);
-      g->routes[vehicle].utilization.push_back(g->routes[vehicle].utilization[i] + demand);
     } else {
-      if (i == index + 1)
-      {
-        g->routes[vehicle].cost_in[i + 1] = arc_out;
-      } else {
-        g->routes[vehicle].cost_in[i + 1] = g->routes[vehicle].cost_in[i];
-      }
-      g->routes[vehicle].cost_out[i + 1] = g->routes[vehicle].cost_out[i];
-      g->routes[vehicle].cuml_duration[i + 1] = g->routes[vehicle].cuml_duration[i] + arc_change;
       g->routes[vehicle].locations[i + 1] = g->routes[vehicle].locations[i];
-      g->routes[vehicle].utilization[i + 1] = g->routes[vehicle].utilization[i] + demand;
     }
   }
-  g->routes[vehicle].cost_out[index - 1] = arc_in;
-  g->routes[vehicle].cost_in[index] = arc_in;
-  g->routes[vehicle].cost_out[index] = arc_out;
-  g->routes[vehicle].cuml_duration[index] = g->routes[vehicle].cuml_duration[index - 1] + arc_in;
-  g->routes[vehicle].duration += arc_change;
-
   g->map_route_position[value] = index;
   g->routes[vehicle].locations[index] = value;  
-  g->routes[vehicle].utilization[index] = g->routes[vehicle].utilization[index - 1] + demand;  
   g->routes[vehicle].route_length++;
 
   return index;
 }
 
-void deleteFromRoute (GA_chromosome *g, UINT vehicle, UINT index, int demand, Task* task) {
+void deleteFromRoute (GA_chromosome *g, UINT vehicle, UINT index) {
   UINT route_size = g->routes[vehicle].route_length;
   
-  double arc_in = travelCost(task->matrix, task->matrix_order, g->routes[vehicle].locations[index - 1], g->routes[vehicle].locations[index]);
-  double arc_out = travelCost(task->matrix, task->matrix_order, g->routes[vehicle].locations[index], g->routes[vehicle].locations[index + 1]);
-  double new_arc = travelCost(task->matrix, task->matrix_order, g->routes[vehicle].locations[index - 1], g->routes[vehicle].locations[index + 1]);
-  double arc_change = new_arc - (arc_in + arc_out);
-
   for (size_t i = index; i < route_size - 1; i++)
   {
-    if  (i ==  index) {
-      g->routes[vehicle].cost_out[i-1] = new_arc;
-      g->routes[vehicle].cost_in[i] = new_arc;
-    } else {
-      g->routes[vehicle].cost_out[i-1] = g->routes[vehicle].cost_out[i];
-      g->routes[vehicle].cost_in[i] = g->routes[vehicle].cost_in[i + 1];
-    }
-    g->routes[vehicle].cuml_duration[i] = g->routes[vehicle].cuml_duration[i] + arc_change;
-
     if (g->map_route_position[g->routes[vehicle].locations[i]] != 0 && g->map_route_position[g->routes[vehicle].locations[i]] != index)
     {
       g->map_route_position[g->routes[vehicle].locations[i]]--; 
     }
     g->routes[vehicle].locations[i] = g->routes[vehicle].locations[i + 1];
-    g->routes[vehicle].utilization[i] = g->routes[vehicle].utilization[i + 1] - demand;
   }
   g->routes[vehicle].locations[route_size - 1] = 0;
-  g->routes[vehicle].locations.pop_back();
-  g->routes[vehicle].utilization[route_size - 1] = 0;
-  g->routes[vehicle].utilization.pop_back();
 
-  double arc_to_depot = travelCost(task->matrix, task->matrix_order, g->routes[vehicle].locations[route_size - 2], g->routes[vehicle].locations[route_size - 1]);
-  g->routes[vehicle].cost_out[route_size - 2] = arc_to_depot;
-  g->routes[vehicle].cost_in[route_size - 1] = arc_to_depot;
+  g->routes[vehicle].locations.pop_back();
+  g->routes[vehicle].utilization.pop_back();
   g->routes[vehicle].cost_in.pop_back();
-  g->routes[vehicle].cost_out[route_size - 1] = 0;
   g->routes[vehicle].cost_out.pop_back();
-  g->routes[vehicle].cuml_duration[route_size - 1] = g->routes[vehicle].cuml_duration[route_size - 2] + arc_to_depot;
   g->routes[vehicle].cuml_duration.pop_back();
-  g->routes[vehicle].duration += arc_change;
 
   g->routes[vehicle].route_length--;
-}
-
-int selectRoute(GA_chromosome *genome, int number_of_vehicles) {
-  int vehicle = 0;
-  UINT v_size = 0;
-  vehicle = urandom(0, number_of_vehicles - 1);
-  while (true)
-  {
-    v_size = genome->routes[vehicle].route_length;
-    if (v_size > 4)
-      break;
-    
-    vehicle = (vehicle + 1) % number_of_vehicles;
-  }
-  return vehicle;
 }
 
 void validateAndFixRoute(GA_chromosome *g, UINT vehicle, UINT vehicle_capacity, std::vector<int> demands, Task* task) {
   int load = 0;
   std::map<int, bool> visited;
-  UINT i = 0;
-  while (i < g->routes[vehicle].route_length)
+  UINT i = 1;
+  while (i < g->routes[vehicle].route_length-1)
   {
     // printRoute(g->routes[vehicle], vehicle);
     int location = g->routes[vehicle].locations[i];
@@ -375,20 +358,23 @@ void validateAndFixRoute(GA_chromosome *g, UINT vehicle, UINT vehicle_capacity, 
       if (location % 2 == 0 && visited.find(location - 1) == visited.end()) // if pickup is in route behind delivery
       {
         UINT pickup_index = g->map_route_position[location - 1];
-        switch (urandom(1, 2))
+        int variant;
+        if (pickup_index == g->routes[vehicle].route_length - 2)
+        {
+          variant = 2;
+        } else {
+          variant = urandom(1, 2);
+        }        
+        switch (variant)
         {
           case 1: { // move delivery somewhere behind pickup
             int new_index = urandom(pickup_index + 1, g->routes[vehicle].route_length - 2);
-            // moveInsideRoute(g, vehicle, i, new_index, location, demands[location], task);
-            deleteFromRoute(g, vehicle, i, demands[location], task);
-            insertToRoute(g, vehicle, new_index, location, demands[location], task);
+            moveInsideRoute(g, vehicle, i, new_index, location);
             recalculateRoute(g, vehicle, task);
             break;
           } 
           case 2: { // move pickup exactly 1 place before delivery
-            // moveInsideRoute(g, vehicle, pickup_index, i, location-1, demands[location-1], task);
-            deleteFromRoute(g, vehicle, pickup_index, demands[location-1], task);
-            insertToRoute(g, vehicle, i, location-1, demands[location-1], task);
+            moveInsideRoute(g, vehicle, pickup_index, i, location-1);
             recalculateRoute(g, vehicle, task);
             break;
           }
@@ -409,9 +395,7 @@ void validateAndFixRoute(GA_chromosome *g, UINT vehicle, UINT vehicle_capacity, 
           {
             continue;
           }
-          // moveInsideRoute(g, vehicle, i, j, location, demands[location], task);
-          deleteFromRoute(g, vehicle, i, demands[location], task);
-          insertToRoute(g, vehicle, j-1, location, demands[location], task);
+          moveInsideRoute(g, vehicle, i, j, location);
           recalculateRoute(g, vehicle, task);
           break;
         }

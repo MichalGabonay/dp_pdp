@@ -7,6 +7,7 @@
 #include <map>
 #include <iostream>
 #include "task.h"
+#include <random>
 
 typedef unsigned int UINT;
 typedef int BOOL;
@@ -35,12 +36,17 @@ typedef struct {
 
 UINT urandom(UINT low, UINT high);
 void swapArrayValues(std::vector<UINT> *locations, UINT position1, UINT position2);
-void swapNeighborsInRoute (GA_chromosome *g, UINT vehicle, UINT vehicle_capacity, std::vector<int> demands);
 void swapLocations (GA_chromosome *g, UINT vehicle, UINT vehicle_capacity, std::vector<int> demands, Task* task);
 UINT insertToRoute (GA_chromosome *g, UINT vehicle, UINT index, UINT value, int demand, Task* task);
-void deleteFromRoute (GA_chromosome *g, UINT vehicle, UINT index, int demand, Task* task);
+void deleteFromRoute (GA_chromosome *g, UINT vehicle, UINT index);
 int selectRoute(GA_chromosome *genome, int number_of_vehicles);
 void validateAndFixRoute(GA_chromosome *g, UINT vehicle, UINT vehicle_capacity, std::vector<int> demands, Task* task);
 void printRoute(Route route, int vehicle_index);
 void recalculateRoute (GA_chromosome *g, UINT vehicle, Task* task);
+int selectRouteByWeight(GA_chromosome *g);
+int selectLocationByCost(Route *route);
+void inserCustomerToRoute(GA_chromosome *g, int vehicle, UINT pickup, Task *task);
+int selectRandomCustomer(Route *route);
+int selectCustomerByCost(Route *route, std::vector<UINT> map_route_position);
+void realocateCustomerInRoute(GA_chromosome *g, int vehicle, UINT pickup, Task *task);
 #endif

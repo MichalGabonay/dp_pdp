@@ -32,7 +32,8 @@ int main()
     // for (size_t i = 0; i < 10; i++)
     // {
         seed = rand_init();
-        // seed = 1970651133;
+        // std::cout << seed << std::endl;
+        // seed = 179062014;
         // srand(seed);
 
         std::chrono::_V2::system_clock::time_point time_beggining;
