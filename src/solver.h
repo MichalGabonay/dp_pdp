@@ -39,8 +39,9 @@ BOOL mutator(GA_chromosome *genome, UINT _pmut, Solver *solver, int mutagens);
 void gprint(GA_chromosome *genome, Solver *solver);
 void mutatorMoveBetweenVehicles(GA_chromosome *genome, Solver *solver);
 void mutatorChangeRouteSchedule(GA_chromosome *genome, Solver *solver);
-void mutatorGuidedChange(GA_chromosome *genome, Task *task);
-void mutatorRandomRealocate(GA_chromosome *genome, Task *task);
+void mutatorGuidedChange(GA_chromosome *genome, Solver *solver);
+void mutatorRandomRealocate(GA_chromosome *genome, Solver *solver);
+int selectIndividByWeight(Solver *solver);
 
 void test(GA_chromosome *genome, Solver *solver);
 #endif
