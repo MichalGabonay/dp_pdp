@@ -68,8 +68,8 @@ bool Solver::Solve()
       {
         // selekce pro reprodukci nahodne
         offs[i] = pop[selectIndividByWeight(this)];
-        mutator(&offs[i], config->unit, this, -1); // MUTAGENES postupne od 1 do LAMBDA:)
-        // mutator(&offs[i], config->unit, this, i%3 + 1); // MUTAGENES postupne od 1 do LAMBDA:)
+        // mutator(&offs[i], config->unit, this, -1); // MUTAGENES postupne od 1 do LAMBDA:)
+        mutator(&offs[i], config->unit, this, i%3 + 1); // MUTAGENES postupne od 1 do LAMBDA:)
         offs[i].fitness = fitness(&offs[i], this->task);
         sortMap[offs[i].fitness] = i;
       }
@@ -427,7 +427,7 @@ BOOL mutator(GA_chromosome *genome, UINT _pmut, Solver *solver, int mutagens)
   {
     for (int i = 0; i < mutagens; i++)
     {
-      switch (urandom(1, 4))
+      switch (urandom(1, 3))
       {
       case 1:
         mutatorMoveBetweenVehicles(genome, solver);
@@ -438,9 +438,9 @@ BOOL mutator(GA_chromosome *genome, UINT _pmut, Solver *solver, int mutagens)
       case 3:
         mutatorGuidedChange(genome, solver);
         break;
-      case 4:
-        mutatorRandomRealocate(genome, solver);
-        break;
+      // case 4:
+      //   mutatorRandomRealocate(genome, solver);
+      //   break;
       default:
         break;
       }
@@ -500,11 +500,11 @@ void mutatorMoveBetweenVehicles(GA_chromosome *genome, Solver *solver)
       deleteFromRoute(genome, vehicle_1, index_2);
       deleteFromRoute(genome, vehicle_1, index_1);
     }
-    // inserCustomerToRoute(genome, vehicle_2, pickup, solver->task);
-    UINT random_index = urandom(1, v_2_size - 1);
-    UINT new_index = insertToRoute(genome, vehicle_2, random_index, pickup, solver->task->demands[pickup], solver->task);
-    insertToRoute(genome, vehicle_2, new_index + 1, delivery, solver->task->demands[delivery], solver->task);
-    recalculateRoute(genome, vehicle_2, solver->task);
+    inserCustomerToRoute(genome, vehicle_2, pickup, solver->task);
+    // UINT random_index = urandom(1, v_2_size - 1);
+    // UINT new_index = insertToRoute(genome, vehicle_2, random_index, pickup, solver->task->demands[pickup], solver->task);
+    // insertToRoute(genome, vehicle_2, new_index + 1, delivery, solver->task->demands[delivery], solver->task);
+    // recalculateRoute(genome, vehicle_2, solver->task);
 
     recalculateRoute(genome, vehicle_1, solver->task);
   }

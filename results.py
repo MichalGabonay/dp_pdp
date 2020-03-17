@@ -3,7 +3,7 @@ import numpy as np
 import csv
 import glob, os
 
-SUFFCIENT_FITNESS = 0.426 # cca 5% worse than Or-tools LC1_2_1
+SUFFCIENT_FITNESS = 0.42 # cca 5% worse than Or-tools LC1_2_1
 
 def Average(lst):
     return sum(lst) / len(lst)
