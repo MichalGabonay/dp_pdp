@@ -26,6 +26,31 @@ int selectRouteByWeight(GA_chromosome *g) {
   return dist(gen);
 }
 
+int selectRouteByCentroid(GA_chromosome *g, UINT pickup, Task* task) {
+  std::vector<double> routeRatios;
+  // int best_insert;
+  // double min_diff;
+
+  for (size_t i = 0; i < g->routes.size(); i++)
+  {
+    double centroid_diff = centroidDiff(g->routes[i].centroid, task->coords[pickup]) + centroidDiff(g->routes[i].centroid, task->coords[pickup+1]);
+    // if (i == 0)
+    // {
+    //   best_insert = 0;
+    //   min_diff = centroid_diff;
+    // } else if (centroid_diff < min_diff)
+    // {
+    //   best_insert = i;
+    //   min_diff = centroid_diff;
+    // }
+    routeRatios.push_back(1/centroid_diff);
+  }
+  // return best_insert;
+  std::mt19937 gen(rand());
+  std::discrete_distribution<> dist(routeRatios.begin(), routeRatios.end());
+  return dist(gen);
+}
+
 int selectLocationByCost(Route *route) {
   std::vector<double> locationsRatios;
   for (size_t i = 0; i < route->route_length; i++)
@@ -61,8 +86,25 @@ int selectCustomerByCost(Route *route, std::vector<UINT> map_route_position) {
   {
     if (i > 0 && i < route->route_length - 1 && route->locations[i] % 2 == 1)
     {
-      UINT d_i = map_route_position[i+1];
+      UINT d_i = map_route_position[route->locations[i]+1];
       locationsRatios.push_back(route->cost_in[i] + route->cost_out[i] + route->cost_in[d_i] + route->cost_out[d_i]);
+      map.push_back(route->locations[i]);
+    }
+  }
+
+  std::mt19937 gen(rand());
+  std::discrete_distribution<> dist(locationsRatios.begin(), locationsRatios.end());
+  return map[dist(gen)];
+}
+
+int selectCustomerByCentroid(Route *route, Task* task) {
+  std::vector<double> locationsRatios;
+  std::vector<double> map;
+  for (size_t i = 0; i < route->route_length; i++)
+  {
+    if (i > 0 && i < route->route_length - 1 && route->locations[i] % 2 == 1)
+    {
+      locationsRatios.push_back(centroidDiff(route->centroid, task->coords[route->locations[i]]) + centroidDiff(route->centroid, task->coords[route->locations[i]+1]));
       map.push_back(route->locations[i]);
     }
   }
@@ -246,8 +288,10 @@ void swapLocations (GA_chromosome *g, UINT vehicle, UINT vehicle_capacity, std::
 
 void recalculateRoute (GA_chromosome *g, UINT vehicle, Task* task) {
   UINT route_size = g->routes[vehicle].route_length;
+  std::set<std::pair<int, int>> setOfCords;
   for (size_t i = 0; i < route_size; i++)
   {
+    setOfCords.insert(task->coords[g->routes[vehicle].locations[i]]);
     if (i == 0) 
     {
       g->routes[vehicle].cost_in[i] = 0;
@@ -273,6 +317,7 @@ void recalculateRoute (GA_chromosome *g, UINT vehicle, Task* task) {
       g->routes[vehicle].duration += g->routes[vehicle].cost_in[i];
     }  
   } 
+  g->routes[vehicle].centroid = calculateCentroid(setOfCords);
 }
 
 void moveInsideRoute (GA_chromosome *g, UINT vehicle, UINT index_from, UINT index_to, UINT value) {
@@ -413,6 +458,22 @@ void validateAndFixRoute(GA_chromosome *g, UINT vehicle, UINT vehicle_capacity, 
     }
     i++;   
   }
+}
+
+std::pair<int, int> calculateCentroid(std::set<std::pair<int, int>> setOfCords) {
+  int set_size = setOfCords.size();
+  int x_sum = 0;
+  int y_sum = 0;
+  for (std::set<std::pair<int, int>>::iterator it=setOfCords.begin(); it!=setOfCords.end(); ++it) {
+    x_sum += it->first;
+    y_sum += it->second;
+  }
+
+  return std::make_pair(round(x_sum/set_size), round(y_sum/set_size));
+}
+
+double centroidDiff(std::pair<int, int> centroid, std::pair<int, int> coord) {
+  return pow(centroid.first - coord.first, 2) + pow(centroid.second - coord.second, 2);
 }
 
 // void insertCustomerToRoute(GA_chromosome *g,

@@ -7,7 +7,7 @@ bool Task::FetchTask(std::string input_file)
   std::ifstream file(input_file);
   if (!file.is_open())
   {
-    std::cout << "Unable to open file" << std::endl;
+    std::cout << "Unable to open file" << std::endl; 
     return false;
   }
 
@@ -46,6 +46,7 @@ bool Task::FetchTask(std::string input_file)
     {
       locations_map.push_back(0);
       demands.push_back(0);
+      coords.push_back(std::make_pair(locations[0][1], locations[0][2]));
     }
     if (locations[i][8] != 0)
     {
@@ -53,14 +54,16 @@ bool Task::FetchTask(std::string input_file)
       locations_map.push_back(locations[i][8]);
       demands.push_back(locations[i][3]);
       demands.push_back(locations[locations[i][8]][3]);
+      coords.push_back(std::make_pair(locations[i][1], locations[i][2]));
+      coords.push_back(std::make_pair(locations[locations[i][8]][1], locations[locations[i][8]][2]));
 
       // // Case if I decided to solve problem wit TW *******************
-      open_times.push_back(locations[i][4]);
-      open_times.push_back(locations[locations[i][8]][4]);
-      close_times.push_back(locations[i][5]);
-      close_times.push_back(locations[locations[i][8]][5]);
-      service_times.push_back(locations[i][6]);
-      service_times.push_back(locations[locations[i][8]][6]);
+      // open_times.push_back(locations[i][4]);
+      // open_times.push_back(locations[locations[i][8]][4]);
+      // close_times.push_back(locations[i][5]);
+      // close_times.push_back(locations[locations[i][8]][5]);
+      // service_times.push_back(locations[i][6]);
+      // service_times.push_back(locations[locations[i][8]][6]);
       // // **************************************************************
     }
   }

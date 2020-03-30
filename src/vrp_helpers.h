@@ -8,6 +8,8 @@
 #include <iostream>
 #include "task.h"
 #include <random>
+#include<set>
+#include <math.h>
 
 typedef unsigned int UINT;
 typedef int BOOL;
@@ -21,6 +23,7 @@ typedef struct {
     UINT route_length;
     UINT cost;
     double duration;
+    std::pair<int, int> centroid;
     UINT distance;
 } Route;
 
@@ -49,4 +52,8 @@ void inserCustomerToRoute(GA_chromosome *g, int vehicle, UINT pickup, Task *task
 int selectRandomCustomer(Route *route);
 int selectCustomerByCost(Route *route, std::vector<UINT> map_route_position);
 void realocateCustomerInRoute(GA_chromosome *g, int vehicle, UINT pickup, Task *task);
+std::pair<int, int> calculateCentroid(std::set<std::pair<int, int>> setOfCords);
+double centroidDiff(std::pair<int, int> centroid, std::pair<int, int> coord);
+int selectRouteByCentroid(GA_chromosome *g, UINT pickup, Task* task);
+int selectCustomerByCentroid(Route *route, Task* task);
 #endif

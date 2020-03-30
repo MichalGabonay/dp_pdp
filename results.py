@@ -1,4 +1,4 @@
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import numpy as np
 import csv
 import glob, os
@@ -84,14 +84,14 @@ for gen_of_bests in bests:
             boxplot_labels.append(generation)
     generation += 1000
     
-# fig = plt.figure(1, figsize=(16, 12))
-# plt.plot(axis_x, best_of_bests)
-# plt.plot(axis_x, avrgs)
-# plt.plot(axis_x, worst_of_bests)
-# plt.ylabel('fitness')
-# plt.xlabel('generations')
-# plt.savefig('bests.png')
+fig = plt.figure(1, figsize=(16, 12))
+plt.plot(axis_x, best_of_bests)
+plt.plot(axis_x, avrgs)
+plt.plot(axis_x, worst_of_bests)
+plt.ylabel('fitness')
+plt.xlabel('generations')
+plt.savefig('bests.png')
 
-# plt.cla()
+plt.cla()
 
 print("BEST: ", max(best_of_bests), ", AVRG: ", max(avrgs), ", WORST: ", max(worst_of_bests), ", SUFFCIENT: ", (suffcient_solutions/len(results))*100, "%")
