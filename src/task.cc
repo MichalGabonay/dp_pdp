@@ -9,7 +9,7 @@ bool Task::FetchTask(std::string input_file)
   {
     std::cout << "Unable to open file" << std::endl; 
     return false;
-  }
+  } 
 
   UINT line_index = 0;
   std::string line;
