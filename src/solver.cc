@@ -16,6 +16,7 @@ bool Solver::Solve()
   if (config->CONFIG_EVOLUTION_TYPE == "ES")
   {
     pop = (GA_chromosome *)calloc(config->CONFIG_MI, sizeof(GA_chromosome));
+    // pop = new GA_chromosome[config->CONFIG_MI]
     next_pop = (GA_chromosome *)calloc(config->CONFIG_MI, sizeof(GA_chromosome));
     offs = (GA_chromosome *)calloc(config->CONFIG_LAMBDA, sizeof(GA_chromosome));
     // int ofx[config->CONFIG_LAMBDA];

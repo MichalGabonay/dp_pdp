@@ -2,7 +2,7 @@
 
 Config::Config()
 {
-  INPUT_FILE = "dataset/LRC2_2_1.txt";
+  INPUT_FILE = "dataset/LR1_2_1.txt";
 
   CONFIG_DEBUG = false;
   CONFIG_GENERATIONS_PRINT = true;
@@ -14,9 +14,9 @@ Config::Config()
   CONFIG_POPSIZE = 20;
 
   CONFIG_EVOLUTION_TYPE = "ES"; // ES or GA
-  CONFIG_ES_PLUS = true;
+  CONFIG_ES_PLUS = false;
 
-  CONFIG_GENERATIONS = 100000;
+  CONFIG_GENERATIONS = 90000;
   CONFIG_LAMBDA = 40;
 
   CONFIG_ES_ELITISM = false;
