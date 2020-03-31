@@ -4,9 +4,9 @@ Config::Config()
 {
   INPUT_FILE = "dataset/LRC2_2_1.txt";
 
-  CONFIG_DEBUG = true;
-  CONFIG_GENERATIONS_PRINT = false;
-  CONFIG_RESULT_SUMMARY = true;
+  CONFIG_DEBUG = false;
+  CONFIG_GENERATIONS_PRINT = true;
+  CONFIG_RESULT_SUMMARY = false;
 
   unit = 100;
   CONFIG_PMUT = 80;
