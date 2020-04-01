@@ -2,7 +2,7 @@
 
 Config::Config()
 {
-  INPUT_FILE = "dataset/LR1_2_1.txt";
+  INPUT_FILE = "dataset/LRC2_6_1.txt";
 
   CONFIG_DEBUG = false;
   CONFIG_GENERATIONS_PRINT = true;
@@ -20,7 +20,7 @@ Config::Config()
   CONFIG_LAMBDA = 40;
 
   CONFIG_ES_ELITISM = false;
-  CONFIG_MUTAGENE_PER_ROUTE = 2;
-  CONFIG_MUTAGENES = 2;
+  CONFIG_MUTAGENE_PER_ROUTE = 3;
+  CONFIG_MUTAGENES = 3;
   CONFIG_MI = 2;
 }

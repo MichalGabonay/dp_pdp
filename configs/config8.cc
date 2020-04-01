@@ -2,7 +2,7 @@
 
 Config::Config()
 {
-  INPUT_FILE = "dataset/LR1_2_1.txt";
+  INPUT_FILE = "dataset/LRC2_6_1.txt";
 
   CONFIG_DEBUG = false;
   CONFIG_GENERATIONS_PRINT = true;

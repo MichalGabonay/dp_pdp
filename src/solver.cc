@@ -27,7 +27,7 @@ bool Solver::Solve()
 
     for (int i = 0; i < config->CONFIG_MI; i++)
     {
-      initialize(&pop[i], this);
+      initialize(&pop[i]);
       pop[i].evaluate = 1;
     }
 
@@ -68,9 +68,9 @@ bool Solver::Solve()
       for (int i = 0; i < config->CONFIG_LAMBDA; i++)
       {
         // selekce pro reprodukci nahodne
-        offs[i] = pop[selectIndividByWeight(this)];
+        offs[i] = pop[this->selectIndividByWeight()];
         // mutator(&offs[i], config->unit, this, -1); // MUTAGENES postupne od 1 do LAMBDA:)
-        mutator(&offs[i], config->unit, this, i%config->CONFIG_MUTAGENES + 1); // MUTAGENES postupne od 1 do LAMBDA:)
+        mutator(&offs[i], config->unit, i%config->CONFIG_MUTAGENES + 1); // MUTAGENES postupne od 1 do LAMBDA:)
         offs[i].fitness = fitness(&offs[i], this->task);
         sortMap[offs[i].fitness] = i;
       }
@@ -112,7 +112,7 @@ bool Solver::Solve()
         }
       }
 
-    } while (!stop(this->config, this));
+    } while (!stop());
   } else {
     // evolucni cyklus - GA ******************************************************************************************
     pool1 = (GA_chromosome *)calloc(config->CONFIG_POPSIZE, sizeof(GA_chromosome));
@@ -128,7 +128,7 @@ bool Solver::Solve()
     // inicializace populace
     for (int i = 0; i < config->CONFIG_POPSIZE; i++)
     {
-      initialize(&pool1[i], this);
+      initialize(&pool1[i]);
       pool1[i].evaluate = 1;
     }
     
@@ -162,7 +162,7 @@ bool Solver::Solve()
       // elitizmus
       next_population[0] = best; // dosud nejlepsi nalezeny jedinec...
       GA_chromosome mutant = best;
-      mutator(&mutant, config->unit, this, -1);
+      mutator(&mutant, config->unit, -1);
       next_population[1] = mutant; // ...a mutant nejlepsiho
                                   // tvorba nove populace
       for (int i = 2; i < config->CONFIG_POPSIZE; i += 2)
@@ -184,16 +184,16 @@ bool Solver::Solve()
         ind1_new = *ind1;
         ind2_new = *ind2;
         // mutace
-        if (mutator(&ind1_new, config->CONFIG_PMUT, this, -1))
+        if (mutator(&ind1_new, config->CONFIG_PMUT, -1))
           ind1_new.evaluate = 1;
-        if (mutator(&ind2_new, config->CONFIG_PMUT, this, -1))
+        if (mutator(&ind2_new, config->CONFIG_PMUT, -1))
           ind2_new.evaluate = 1;
         // umisteni potomku do nove populace
         next_population[i] = ind1_new;
         next_population[i + 1] = ind2_new;
       }
 
-    } while (!stop(this->config, this));
+    } while (!stop());
     // ******************************************************************************************
   }  
 
@@ -202,10 +202,10 @@ bool Solver::Solve()
 }
 
 // vypis chromozomu
-void gprint(GA_chromosome *genome, Solver *solver)
+void Solver::gprint(GA_chromosome *genome)
 {
   UINT used_vehicles = 0;
-  for (int i = 0; i < solver->task->number_of_vehicles; i++)
+  for (int i = 0; i < this->task->number_of_vehicles; i++)
   {
     if (genome->routes[i].route_length > 2)
     {
@@ -230,9 +230,9 @@ void gprint(GA_chromosome *genome, Solver *solver)
 }
 
 // random initialization of population
-void initialize(GA_chromosome *genome, Solver *solver)
+void Solver::initialize(GA_chromosome *genome)
 {
-  for (int i = 0; i < solver->task->number_of_vehicles; i++)
+  for (int i = 0; i < this->task->number_of_vehicles; i++)
   {
     Route route;
     route.cost = 0;
@@ -248,24 +248,24 @@ void initialize(GA_chromosome *genome, Solver *solver)
     genome->routes[i].cost_in.push_back(0);
   }
   genome->map_route_position.push_back(0);
-  for (UINT i = 1; i < solver->task->locations_map.size(); i += 2)
+  for (UINT i = 1; i < this->task->locations_map.size(); i += 2)
   {
     bool succes_insert = false;
-    // UINT vehicle = urandom(0, solver->task->number_of_vehicles - 1);
+    // UINT vehicle = urandom(0, this->task->number_of_vehicles - 1);
     UINT vehicle = 0;
     int tries = 0;
-    while (!succes_insert && tries < solver->task->number_of_vehicles)
+    while (!succes_insert && tries < this->task->number_of_vehicles)
     {
       tries++;
       UINT prev = genome->routes[vehicle].route_length - 1;
       UINT next = genome->routes[vehicle].route_length;
 
-      double route_to_pickup = solver->task->matrix[genome->routes[vehicle].locations[prev] * solver->task->matrix_order + i];
-      double route_to_delivery = solver->task->matrix[i * solver->task->matrix_order + i + 1];
-      double route_to_depot = solver->task->matrix[(i + 1) * solver->task->matrix_order];
-      if (genome->routes[vehicle].duration + route_to_pickup + route_to_delivery + route_to_depot > solver->task->max_route_duration)
+      double route_to_pickup = this->task->matrix[genome->routes[vehicle].locations[prev] * this->task->matrix_order + i];
+      double route_to_delivery = this->task->matrix[i * this->task->matrix_order + i + 1];
+      double route_to_depot = this->task->matrix[(i + 1) * this->task->matrix_order];
+      if (genome->routes[vehicle].duration + route_to_pickup + route_to_delivery + route_to_depot > this->task->max_route_duration)
       {
-        vehicle = (vehicle + 1) % solver->task->number_of_vehicles;
+        vehicle = (vehicle + 1) % this->task->number_of_vehicles;
         continue;
       } else {
         succes_insert = true;
@@ -275,7 +275,7 @@ void initialize(GA_chromosome *genome, Solver *solver)
     
       genome->routes[vehicle].locations.push_back(i);
       genome->routes[vehicle].duration += route_to_pickup;
-      genome->routes[vehicle].utilization.push_back(genome->routes[vehicle].utilization[next - 1] + solver->task->demands[i]);
+      genome->routes[vehicle].utilization.push_back(genome->routes[vehicle].utilization[next - 1] + this->task->demands[i]);
       genome->routes[vehicle].cuml_duration.push_back(genome->routes[vehicle].duration);
       genome->map_route_position.push_back(next);
 
@@ -284,7 +284,7 @@ void initialize(GA_chromosome *genome, Solver *solver)
 
       genome->routes[vehicle].locations.push_back(i + 1);
       genome->routes[vehicle].duration += route_to_delivery;
-      genome->routes[vehicle].utilization.push_back(genome->routes[vehicle].utilization[next] + solver->task->demands[i + 1]);
+      genome->routes[vehicle].utilization.push_back(genome->routes[vehicle].utilization[next] + this->task->demands[i + 1]);
       genome->routes[vehicle].cuml_duration.push_back(genome->routes[vehicle].duration);
       genome->map_route_position.push_back(next + 1);
 
@@ -296,10 +296,10 @@ void initialize(GA_chromosome *genome, Solver *solver)
       exit(1);
     }
   }
-  for (int i = 0; i < solver->task->number_of_vehicles; i++)
+  for (int i = 0; i < this->task->number_of_vehicles; i++)
   {
     int last_customer = genome->routes[i].route_length - 1;
-    double route_to_depot = solver->task->matrix[genome->routes[i].locations[last_customer] * solver->task->matrix_order];
+    double route_to_depot = this->task->matrix[genome->routes[i].locations[last_customer] * this->task->matrix_order];
     genome->routes[i].cost_out.push_back(route_to_depot); // cost out from previous location
     genome->routes[i].cost_in.push_back(route_to_depot);
     genome->routes[i].cost_out.push_back(0);
@@ -309,37 +309,37 @@ void initialize(GA_chromosome *genome, Solver *solver)
     genome->routes[i].utilization.push_back(0);
     genome->routes[i].route_length++;
   }
-  // for (UINT i = 1; i < solver->task->locations_map.size(); i += 2) {
-  //   UINT vehicle = urandom(0, solver->task->number_of_vehicles - 1);
+  // for (UINT i = 1; i < this->task->locations_map.size(); i += 2) {
+  //   UINT vehicle = urandom(0, this->task->number_of_vehicles - 1);
   //   printRoute(genome->routes[vehicle], vehicle);
-  //   inserCustomerToRoute(genome, vehicle, i, solver->task);
+  //   inserCustomerToRoute(genome, vehicle, i, this->task);
   // }
 }
 
 // test na zastaveni evoluce
-BOOL stop(Config *config, Solver *solver)
+BOOL Solver::stop()
 {
   if (config->CONFIG_GENERATIONS_PRINT)
   {
-    if (solver->generation % 1000 == 0 || solver->generation == 1)
+    if (this->generation % 1000 == 0 || this->generation == 1)
     {
       std::ostringstream os;
       os << getpid() << ";";
       int popsize;
-      if (solver->config->CONFIG_EVOLUTION_TYPE == "ES")
+      if (this->config->CONFIG_EVOLUTION_TYPE == "ES")
       {
-        popsize = solver->config->CONFIG_MI;
+        popsize = this->config->CONFIG_MI;
       } else {
-        popsize = solver->config->CONFIG_POPSIZE;
+        popsize = this->config->CONFIG_POPSIZE;
       }
       
       for (int i = 0; i < popsize; i++)
       {
-        if (solver->config->CONFIG_EVOLUTION_TYPE == "ES")
+        if (this->config->CONFIG_EVOLUTION_TYPE == "ES")
         {
-          os << solver->pop[i].fitness;
+          os << this->pop[i].fitness;
         } else {
-          os << solver->population[i].fitness;
+          os << this->population[i].fitness;
         }
         if (i != popsize - 1)
         {
@@ -352,25 +352,25 @@ BOOL stop(Config *config, Solver *solver)
     }
   }
 
-  if (solver->best.fitness > solver->best_ever)
+  if (this->best.fitness > this->best_ever)
   {
-    solver->best_ever = solver->best.fitness;
+    this->best_ever = this->best.fitness;
     if (config->CONFIG_DEBUG)
     {
-      printf("Fitness = %f | Total distance = %.2f  in generation %d\n", solver->best_ever, 1000 / solver->best_ever, solver->generation);
+      printf("Fitness = %f | Total distance = %.2f  in generation %d\n", this->best_ever, 1000 / this->best_ever, this->generation);
     }
   }
-  // if (config->CONFIG_DEBUG && solver->generation % 1000 == 0)
+  // if (config->CONFIG_DEBUG && this->generation % 1000 == 0)
   // {
-  //   printf("Fitness = %f | Total distance = %.2f  in generation %d\n", solver->best_ever, 1000 / solver->best_ever, solver->generation);
+  //   printf("Fitness = %f | Total distance = %.2f  in generation %d\n", this->best_ever, 1000 / this->best_ever, this->generation);
   // }
 
-  if (config->CONFIG_GENERATIONS > 0 && solver->generation == config->CONFIG_GENERATIONS)
+  if (config->CONFIG_GENERATIONS > 0 && this->generation == config->CONFIG_GENERATIONS)
   {
     if (config->CONFIG_DEBUG)
     {
-      // printf("END; generation=%d\n", solver->generation);
-      gprint(&solver->best, solver);
+      // printf("END; generation=%d\n", this->generation);
+      gprint(&this->best);
       std::cout << "ELITISM:" << config->CONFIG_ES_ELITISM << "; ";
       std::cout << "PLUS:" << config->CONFIG_ES_PLUS << "; ";
       std::cout << "MUTAGENES:" << config->CONFIG_MUTAGENES << "; ";
@@ -387,7 +387,7 @@ BOOL stop(Config *config, Solver *solver)
 }
 
 // evaluace fitness pro zadaneho jedince
-double fitness(GA_chromosome *genome, Task *task)
+double Solver::fitness(GA_chromosome *genome, Task *task)
 {
   double cost = 0;
   double total_route_distance;
@@ -419,30 +419,30 @@ double fitness(GA_chromosome *genome, Task *task)
 }
 
 // mutace
-BOOL mutator(GA_chromosome *genome, UINT _pmut, Solver *solver, int mutagens)
+BOOL Solver::mutator(GA_chromosome *genome, UINT _pmut, int mutagens)
 {
   if (mutagens == -1)
   {
-    mutagens = urandom(0, solver->config->CONFIG_MUTAGENES);
+    mutagens = urandom(0, this->config->CONFIG_MUTAGENES);
   }
   
-  if (urandom(0, solver->config->unit) <= _pmut) // mutace s pravdepodobnosti _pmut
+  if (urandom(0, this->config->unit) <= _pmut) // mutace s pravdepodobnosti _pmut
   {
     for (int i = 0; i < mutagens; i++)
     {
       switch (urandom(1, 3))
       {
       case 1:
-        mutatorMoveBetweenVehicles(genome, solver);
+        Solver::mutatorMoveBetweenVehicles(genome);
         break;
       case 2:
-        mutatorChangeRouteSchedule(genome, solver);
+        Solver::mutatorChangeRouteSchedule(genome);
         break;
       case 3:
-        mutatorGuidedChange(genome, solver);
+        Solver::mutatorGuidedChange(genome);
         break;
       // case 4:
-      //   mutatorRandomRealocate(genome, solver);
+      //   mutatorRandomRealocate(genome);
       //   break;
       default:
         break;
@@ -453,21 +453,21 @@ BOOL mutator(GA_chromosome *genome, UINT _pmut, Solver *solver, int mutagens)
   return 0; // ...jinak vracim false
 }
 
-void mutatorMoveBetweenVehicles(GA_chromosome *genome, Solver *solver)
+void Solver::mutatorMoveBetweenVehicles(GA_chromosome *genome)
 {
   UINT pickup, delivery, index_2, vehicle_1, vehicle_2, v_2_size;
   UINT v_1_size = 0;
 
   while (v_1_size <= 2)
   {
-    vehicle_1 = urandom(0, solver->task->number_of_vehicles - 1);
+    vehicle_1 = urandom(0, this->task->number_of_vehicles - 1);
     // vehicle_1 = selectRouteByWeight(genome);
 
     v_1_size = genome->routes[vehicle_1].route_length;
   }
 
 
-  UINT mutagens_per_route = urandom(1, solver->config->CONFIG_MUTAGENE_PER_ROUTE/2);
+  UINT mutagens_per_route = urandom(1, this->config->CONFIG_MUTAGENE_PER_ROUTE/2);
   for (UINT i = 0; i < mutagens_per_route; i++)
   {
     if (genome->routes[vehicle_1].route_length <= 2)
@@ -479,7 +479,7 @@ void mutatorMoveBetweenVehicles(GA_chromosome *genome, Solver *solver)
     // UINT index_1 = selectLocationByCost(&genome->routes[vehicle_1]);
     // UINT value = genome->routes[vehicle_1].locations[index_1];
 
-    UINT value = selectCustomerByCentroid(&genome->routes[vehicle_1], solver->task);
+    UINT value = selectCustomerByCentroid(&genome->routes[vehicle_1], this->task);
     UINT index_1 = genome->map_route_position[value];
 
     if (value % 2 == 0)
@@ -499,82 +499,75 @@ void mutatorMoveBetweenVehicles(GA_chromosome *genome, Solver *solver)
       deleteFromRoute(genome, vehicle_1, index_1);
     }
 
-    vehicle_2 = selectRouteByCentroid(genome, pickup, solver->task);
+    vehicle_2 = selectRouteByCentroid(genome, pickup, this->task);
 
     v_2_size = genome->routes[vehicle_2].route_length;
 
-    inserCustomerToRoute(genome, vehicle_2, pickup, solver->task);
+    inserCustomerToRoute(genome, vehicle_2, pickup, this->task);
     // UINT random_index = urandom(1, v_2_size - 1);
-    // UINT new_index = insertToRoute(genome, vehicle_2, random_index, pickup, solver->task->demands[pickup], solver->task);
-    // insertToRoute(genome, vehicle_2, new_index + 1, delivery, solver->task->demands[delivery], solver->task);
-    // recalculateRoute(genome, vehicle_2, solver->task);
+    // UINT new_index = insertToRoute(genome, vehicle_2, random_index, pickup, this->task->demands[pickup], this->task);
+    // insertToRoute(genome, vehicle_2, new_index + 1, delivery, this->task->demands[delivery], this->task);
+    // recalculateRoute(genome, vehicle_2, this->task);
 
-    recalculateRoute(genome, vehicle_1, solver->task);
+    recalculateRoute(genome, vehicle_1, this->task);
   }
 
 
   if (urandom(0, 100) <= 50 && v_2_size > 4) // mutace s pravdepodobnosti _pmut
   {
-    // swapLocations(genome, vehicle_2, solver->task->capacity_of_vehicles, solver->task->demands, solver->task);
+    // swapLocations(genome, vehicle_2, this->task->capacity_of_vehicles, this->task->demands, this->task);
     int pickup = selectCustomerByCost(&genome->routes[vehicle_2], genome->map_route_position);
-    // int pickup = selectCustomerByCentroid(&genome->routes[vehicle_2], solver->task);
-    realocateCustomerInRoute(genome, vehicle_2, pickup, solver->task);
+    // int pickup = selectCustomerByCentroid(&genome->routes[vehicle_2], this->task);
+    realocateCustomerInRoute(genome, vehicle_2, pickup, this->task);
   }
 }
 
-void mutatorChangeRouteSchedule(GA_chromosome *genome, Solver *solver)
+void Solver::mutatorChangeRouteSchedule(GA_chromosome *genome)
 {
-  int route1 = selectRoute(genome, solver->task->number_of_vehicles);
+  int route1 = selectRoute(genome, this->task->number_of_vehicles);
   // int route1 = selectRouteByWeight(genome);
   if (route1 == -1 || genome->routes[route1].route_length < 6)
     return; // finding of route was not successful
 
-  UINT mutagens_per_route = urandom(1, solver->config->CONFIG_MUTAGENE_PER_ROUTE);
+  UINT mutagens_per_route = urandom(1, this->config->CONFIG_MUTAGENE_PER_ROUTE);
   for (UINT i = 0; i < mutagens_per_route; i++)
   {
     // printRoute(genome->routes[route1], route1);
     // std::cout << "som tu 10" << std::endl;
-    swapLocations(genome, route1, solver->task->capacity_of_vehicles, solver->task->demands, solver->task);
+    swapLocations(genome, route1, this->task->capacity_of_vehicles, this->task->demands, this->task);
     // printRoute(genome->routes[route1], route1);
   }
 }
 
-void mutatorGuidedChange(GA_chromosome *genome, Solver *solver)
+void Solver::mutatorGuidedChange(GA_chromosome *genome)
 {
   int vehicle = selectRouteByWeight(genome);
-  UINT mutagens_per_route = urandom(1, solver->config->CONFIG_MUTAGENE_PER_ROUTE);
+  UINT mutagens_per_route = urandom(1, this->config->CONFIG_MUTAGENE_PER_ROUTE);
   for (UINT i = 0; i < mutagens_per_route; i++)
   {
     int pickup = selectCustomerByCost(&genome->routes[vehicle], genome->map_route_position);
-    realocateCustomerInRoute(genome, vehicle, pickup, solver->task);
+    realocateCustomerInRoute(genome, vehicle, pickup, this->task);
   }
 }
 
-void mutatorRandomRealocate(GA_chromosome *genome, Solver *solver)
+void Solver::mutatorRandomRealocate(GA_chromosome *genome)
 {
-  int vehicle = selectRoute(genome, solver->task->number_of_vehicles);
-  UINT mutagens_per_route = urandom(1, solver->config->CONFIG_MUTAGENE_PER_ROUTE);
+  int vehicle = selectRoute(genome, this->task->number_of_vehicles);
+  UINT mutagens_per_route = urandom(1, this->config->CONFIG_MUTAGENE_PER_ROUTE);
   for (UINT i = 0; i < mutagens_per_route; i++)
   {
     int pickup = selectRandomCustomer(&genome->routes[vehicle]);
-    realocateCustomerInRoute(genome, vehicle, pickup, solver->task);
+    realocateCustomerInRoute(genome, vehicle, pickup, this->task);
   }
 }
 
-int selectIndividByWeight(Solver *solver) {
+int Solver::selectIndividByWeight() {
   std::vector<double> finess;
-  for (int i = 0; i < solver->config->CONFIG_MI; i++)
+  for (int i = 0; i < this->config->CONFIG_MI; i++)
   {
-    finess.push_back(solver->offs[i].fitness * 10);
+    finess.push_back(this->offs[i].fitness * 10);
   }
   std::mt19937 gen(rand());
   std::discrete_distribution<> dist(finess.begin(), finess.end());
   return dist(gen);
-}
-
-void test(GA_chromosome *genome, Solver *solver)
-{
-  // std::cout << solver->task->capacity_of_vehicles << std::endl;
-  mutatorChangeRouteSchedule(genome, solver);
-  // exit(0);
 }

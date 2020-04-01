@@ -13,6 +13,23 @@ public:
   Config *config;
 
   GA_chromosome best; // najlepsi dosud nalezene reseni
+
+  Solver(Task* task, Config* config);
+
+  bool Solve();
+
+private:
+  void initialize(GA_chromosome *genome);
+  double fitness(GA_chromosome *genome, Task *task);
+  BOOL stop();
+  BOOL mutator(GA_chromosome *genome, UINT _pmut, int mutagens);
+  void gprint(GA_chromosome *genome);
+  void mutatorMoveBetweenVehicles(GA_chromosome *genome);
+  void mutatorChangeRouteSchedule(GA_chromosome *genome);
+  void mutatorGuidedChange(GA_chromosome *genome);
+  void mutatorRandomRealocate(GA_chromosome *genome);
+  int selectIndividByWeight();
+
   double best_ever;   // fitness dosud nejlepsiho jedince
 
   int generation; // pocitadlo generaci
@@ -27,21 +44,6 @@ public:
   GA_chromosome *next_pop;
   GA_chromosome *offs;
   // --------------
-
-  Solver(Task* task, Config* config);
-  bool Solve();
 };
 
-void initialize(GA_chromosome *genome, Solver *solver);
-double fitness(GA_chromosome *genome, Task *task);
-BOOL stop(Config *config, Solver *solver);
-BOOL mutator(GA_chromosome *genome, UINT _pmut, Solver *solver, int mutagens);
-void gprint(GA_chromosome *genome, Solver *solver);
-void mutatorMoveBetweenVehicles(GA_chromosome *genome, Solver *solver);
-void mutatorChangeRouteSchedule(GA_chromosome *genome, Solver *solver);
-void mutatorGuidedChange(GA_chromosome *genome, Solver *solver);
-void mutatorRandomRealocate(GA_chromosome *genome, Solver *solver);
-int selectIndividByWeight(Solver *solver);
-
-void test(GA_chromosome *genome, Solver *solver);
 #endif
