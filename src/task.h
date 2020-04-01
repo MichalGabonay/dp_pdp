@@ -23,7 +23,7 @@ typedef enum {
 std::vector<double> calculateDistanceMatrix(std::vector<int> locations_map, std::vector<std::vector<int>> locations);
 str2int_errno str2int(int *out, char *s, UINT base);
 
-#define MAX_ROUTE_DURATION 250;
+#define MAX_ROUTE_DURATION 500;
 
 class Task
 {
