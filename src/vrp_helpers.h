@@ -35,25 +35,28 @@ typedef struct {
     std::vector<Route> routes;
     std::vector<UINT> map_route_position;
     std::vector<UINT> map_customer_in_vehicle;
-} GA_chromosome;
+} Chromosome;
 
 UINT urandom(UINT low, UINT high);
 void swapArrayValues(std::vector<UINT> *locations, UINT position1, UINT position2);
-void swapLocations (GA_chromosome *g, UINT vehicle, UINT vehicle_capacity, std::vector<int> demands, Task* task);
-UINT insertToRoute (GA_chromosome *g, UINT vehicle, UINT index, UINT value, int demand, Task* task);
-void deleteFromRoute (GA_chromosome *g, UINT vehicle, UINT index);
-int selectRoute(GA_chromosome *genome, int number_of_vehicles);
-void validateAndFixRoute(GA_chromosome *g, UINT vehicle, UINT vehicle_capacity, std::vector<int> demands, Task* task);
-void printRoute(Route route, int vehicle_index);
-void recalculateRoute (GA_chromosome *g, UINT vehicle, Task* task);
-int selectRouteByWeight(GA_chromosome *g);
-int selectLocationByCost(Route *route);
-void inserCustomerToRoute(GA_chromosome *g, int vehicle, UINT pickup, Task *task);
-int selectRandomCustomer(Route *route);
-int selectCustomerByCost(Route *route, std::vector<UINT> map_route_position);
-void realocateCustomerInRoute(GA_chromosome *g, int vehicle, UINT pickup, Task *task);
 std::pair<int, int> calculateCentroid(std::set<std::pair<int, int>> setOfCords);
 double centroidDiff(std::pair<int, int> centroid, std::pair<int, int> coord);
-int selectRouteByCentroid(GA_chromosome *g, UINT pickup, Task* task);
+
+void swapLocations (Chromosome *g, UINT vehicle, UINT vehicle_capacity, std::vector<int> demands, Task* task);
+UINT insertToRoute (Chromosome *g, UINT vehicle, UINT index, UINT value, int demand, Task* task);
+void deleteFromRoute (Chromosome *g, UINT vehicle, UINT index);
+int selectRoute(Chromosome *genome, int number_of_vehicles);
+void validateAndFixRoute(Chromosome *g, UINT vehicle, UINT vehicle_capacity, std::vector<int> demands, Task* task);
+void recalculateRoute (Chromosome *g, UINT vehicle, Task* task);
+int selectRouteByWeight(Chromosome *g);
+void inserCustomerToRoute(Chromosome *g, int vehicle, UINT pickup, Task *task);
+void realocateCustomerInRoute(Chromosome *g, int vehicle, UINT pickup, Task *task);
+int selectRouteByCentroid(Chromosome *g, UINT pickup, Task* task);
+
+void printRoute(Route route, int vehicle_index);
+int selectLocationByCost(Route *route);
+int selectRandomCustomer(Route *route);
+int selectCustomerByCost(Route *route, std::vector<UINT> map_route_position);
 int selectCustomerByCentroid(Route *route, Task* task);
+
 #endif

@@ -1,6 +1,6 @@
 #include "vrp_helpers.h"
 
-int selectRoute(GA_chromosome *genome, int number_of_vehicles) {
+int selectRoute(Chromosome *genome, int number_of_vehicles) {
   int vehicle = 0;
   UINT v_size = 0;
   vehicle = urandom(0, number_of_vehicles - 1);
@@ -15,7 +15,7 @@ int selectRoute(GA_chromosome *genome, int number_of_vehicles) {
   return vehicle;
 }
 
-int selectRouteByWeight(GA_chromosome *g) {
+int selectRouteByWeight(Chromosome *g) {
   std::vector<double> routeRatios;
   for (size_t i = 0; i < g->routes.size(); i++)
   {
@@ -26,7 +26,7 @@ int selectRouteByWeight(GA_chromosome *g) {
   return dist(gen);
 }
 
-int selectRouteByCentroid(GA_chromosome *g, UINT pickup, Task* task) {
+int selectRouteByCentroid(Chromosome *g, UINT pickup, Task* task) {
   std::vector<double> routeRatios;
   // int best_insert;
   // double min_diff;
@@ -114,7 +114,7 @@ int selectCustomerByCentroid(Route *route, Task* task) {
   return map[dist(gen)];
 }
 
-void realocateCustomerInRoute(GA_chromosome *g, int vehicle, UINT pickup, Task *task) {
+void realocateCustomerInRoute(Chromosome *g, int vehicle, UINT pickup, Task *task) {
   UINT pickup_index = g->map_route_position[pickup];
   UINT delivery_index = g->map_route_position[pickup+1];
 
@@ -124,7 +124,7 @@ void realocateCustomerInRoute(GA_chromosome *g, int vehicle, UINT pickup, Task *
   inserCustomerToRoute(g, vehicle, pickup, task);
 }
 
-void inserCustomerToRoute(GA_chromosome *g, int vehicle, UINT pickup, Task *task) {
+void inserCustomerToRoute(Chromosome *g, int vehicle, UINT pickup, Task *task) {
   if (g->routes[vehicle].route_length <= 2)
   {
     insertToRoute(g, vehicle, 1, pickup, task->demands[pickup], task);
@@ -237,7 +237,7 @@ void printRoute(Route route, int vehicle_index) {
   printf("cost: %d  --  duration: %f  --  distance: %d \n\n", route.cost, route.duration, route.distance);
 }
 
-void swapLocations (GA_chromosome *g, UINT vehicle, UINT vehicle_capacity, std::vector<int> demands, Task* task) {
+void swapLocations (Chromosome *g, UINT vehicle, UINT vehicle_capacity, std::vector<int> demands, Task* task) {
   UINT value, value_of_switched, index_1, index_2;
   int number_of_tries = 0;
   bool found_valid = false;
@@ -286,7 +286,7 @@ void swapLocations (GA_chromosome *g, UINT vehicle, UINT vehicle_capacity, std::
   validateAndFixRoute(g, vehicle, vehicle_capacity, demands, task);
 }
 
-void recalculateRoute (GA_chromosome *g, UINT vehicle, Task* task) {
+void recalculateRoute (Chromosome *g, UINT vehicle, Task* task) {
   UINT route_size = g->routes[vehicle].route_length;
   std::set<std::pair<int, int>> setOfCords;
   for (size_t i = 0; i < route_size; i++)
@@ -320,7 +320,7 @@ void recalculateRoute (GA_chromosome *g, UINT vehicle, Task* task) {
   g->routes[vehicle].centroid = calculateCentroid(setOfCords);
 }
 
-void moveInsideRoute (GA_chromosome *g, UINT vehicle, UINT index_from, UINT index_to, UINT value) {
+void moveInsideRoute (Chromosome *g, UINT vehicle, UINT index_from, UINT index_to, UINT value) {
   if (index_from < index_to) {
     for (size_t i = index_from + 1; i <= index_to; i++)
     {
@@ -345,7 +345,7 @@ void moveInsideRoute (GA_chromosome *g, UINT vehicle, UINT index_from, UINT inde
   g->map_route_position[value] = index_to;
 }
 
-UINT insertToRoute (GA_chromosome *g, UINT vehicle, UINT index, UINT value, int demand, Task* task) {
+UINT insertToRoute (Chromosome *g, UINT vehicle, UINT index, UINT value, int demand, Task* task) {
   UINT route_size = g->routes[vehicle].route_length;
   while (g->routes[vehicle].utilization[index - 1] + demand > (int) task->capacity_of_vehicles)
   {
@@ -375,7 +375,7 @@ UINT insertToRoute (GA_chromosome *g, UINT vehicle, UINT index, UINT value, int 
   return index;
 }
 
-void deleteFromRoute (GA_chromosome *g, UINT vehicle, UINT index) {
+void deleteFromRoute (Chromosome *g, UINT vehicle, UINT index) {
   UINT route_size = g->routes[vehicle].route_length;
   
   for (size_t i = index; i < route_size - 1; i++)
@@ -397,7 +397,7 @@ void deleteFromRoute (GA_chromosome *g, UINT vehicle, UINT index) {
   g->routes[vehicle].route_length--;
 }
 
-void validateAndFixRoute(GA_chromosome *g, UINT vehicle, UINT vehicle_capacity, std::vector<int> demands, Task* task) {
+void validateAndFixRoute(Chromosome *g, UINT vehicle, UINT vehicle_capacity, std::vector<int> demands, Task* task) {
   int load = 0;
   std::map<int, bool> visited;
   UINT i = 1;
@@ -476,7 +476,7 @@ double centroidDiff(std::pair<int, int> centroid, std::pair<int, int> coord) {
   return pow(centroid.first - coord.first, 2) + pow(centroid.second - coord.second, 2);
 }
 
-// void insertCustomerToRoute(GA_chromosome *g,
+// void insertCustomerToRoute(Chromosome *g,
 //                            UINT pickup, 
 //                            UINT delivery,
 //                            int vehicle,

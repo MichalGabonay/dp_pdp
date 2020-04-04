@@ -11,15 +11,26 @@ Solver::Solver(Task *i_task, Config *i_config)
   config = i_config;
 }
 
+Solver::~Solver()
+{
+  if (config->CONFIG_EVOLUTION_TYPE == "ES")
+  {
+    free(pop);
+    free(next_pop);
+    free(offs);
+  } else {
+    free(pool1);
+    free(pool2);
+  }
+}
+
 bool Solver::Solve()
 {
   if (config->CONFIG_EVOLUTION_TYPE == "ES")
   {
-    pop = (GA_chromosome *)calloc(config->CONFIG_MI, sizeof(GA_chromosome));
-    // pop = new GA_chromosome[config->CONFIG_MI]
-    next_pop = (GA_chromosome *)calloc(config->CONFIG_MI, sizeof(GA_chromosome));
-    offs = (GA_chromosome *)calloc(config->CONFIG_LAMBDA, sizeof(GA_chromosome));
-    // int ofx[config->CONFIG_LAMBDA];
+    pop = (Chromosome *)calloc(config->CONFIG_MI, sizeof(Chromosome));
+    next_pop = (Chromosome *)calloc(config->CONFIG_MI, sizeof(Chromosome));
+    offs = (Chromosome *)calloc(config->CONFIG_LAMBDA, sizeof(Chromosome));
     
     generation = 0;
     best.fitness = 0.0;
@@ -115,13 +126,13 @@ bool Solver::Solve()
     } while (!stop());
   } else {
     // evolucni cyklus - GA ******************************************************************************************
-    pool1 = (GA_chromosome *)calloc(config->CONFIG_POPSIZE, sizeof(GA_chromosome));
-    pool2 = (GA_chromosome *)calloc(config->CONFIG_POPSIZE, sizeof(GA_chromosome));
+    pool1 = (Chromosome *)calloc(config->CONFIG_POPSIZE, sizeof(Chromosome));
+    pool2 = (Chromosome *)calloc(config->CONFIG_POPSIZE, sizeof(Chromosome));
     // inicializace promennych
     generation = 0;
     best.fitness = 0.0;
     best_ever = 0.0;
-    GA_chromosome ind1_new, ind2_new;
+    Chromosome ind1_new, ind2_new;
     int _tour = (config->CONFIG_TOUR >= 2 ? config->CONFIG_TOUR : 2);
     UINT i1;
 
@@ -161,13 +172,13 @@ bool Solver::Solve()
 
       // elitizmus
       next_population[0] = best; // dosud nejlepsi nalezeny jedinec...
-      GA_chromosome mutant = best;
+      Chromosome mutant = best;
       mutator(&mutant, config->unit, -1);
       next_population[1] = mutant; // ...a mutant nejlepsiho
                                   // tvorba nove populace
       for (int i = 2; i < config->CONFIG_POPSIZE; i += 2)
       {
-        GA_chromosome *ind1 = NULL, *ind2 = NULL;
+        Chromosome *ind1 = NULL, *ind2 = NULL;
         // turnajovy vyber jedincu
         for (int t = 0; t < _tour; t++)
         {
@@ -202,7 +213,7 @@ bool Solver::Solve()
 }
 
 // vypis chromozomu
-void Solver::gprint(GA_chromosome *genome)
+void Solver::gprint(Chromosome *genome)
 {
   UINT used_vehicles = 0;
   for (int i = 0; i < this->task->number_of_vehicles; i++)
@@ -230,7 +241,7 @@ void Solver::gprint(GA_chromosome *genome)
 }
 
 // random initialization of population
-void Solver::initialize(GA_chromosome *genome)
+void Solver::initialize(Chromosome *genome)
 {
   for (int i = 0; i < this->task->number_of_vehicles; i++)
   {
@@ -387,7 +398,7 @@ BOOL Solver::stop()
 }
 
 // evaluace fitness pro zadaneho jedince
-double Solver::fitness(GA_chromosome *genome, Task *task)
+double Solver::fitness(Chromosome *genome, Task *task)
 {
   double cost = 0;
   double total_route_distance;
@@ -419,7 +430,7 @@ double Solver::fitness(GA_chromosome *genome, Task *task)
 }
 
 // mutace
-BOOL Solver::mutator(GA_chromosome *genome, UINT _pmut, int mutagens)
+BOOL Solver::mutator(Chromosome *genome, UINT _pmut, int mutagens)
 {
   if (mutagens == -1)
   {
@@ -453,7 +464,7 @@ BOOL Solver::mutator(GA_chromosome *genome, UINT _pmut, int mutagens)
   return 0; // ...jinak vracim false
 }
 
-void Solver::mutatorMoveBetweenVehicles(GA_chromosome *genome)
+void Solver::mutatorMoveBetweenVehicles(Chromosome *genome)
 {
   UINT pickup, delivery, index_2, vehicle_1, vehicle_2, v_2_size;
   UINT v_1_size = 0;
@@ -522,7 +533,7 @@ void Solver::mutatorMoveBetweenVehicles(GA_chromosome *genome)
   }
 }
 
-void Solver::mutatorChangeRouteSchedule(GA_chromosome *genome)
+void Solver::mutatorChangeRouteSchedule(Chromosome *genome)
 {
   int route1 = selectRoute(genome, this->task->number_of_vehicles);
   // int route1 = selectRouteByWeight(genome);
@@ -539,7 +550,7 @@ void Solver::mutatorChangeRouteSchedule(GA_chromosome *genome)
   }
 }
 
-void Solver::mutatorGuidedChange(GA_chromosome *genome)
+void Solver::mutatorGuidedChange(Chromosome *genome)
 {
   int vehicle = selectRouteByWeight(genome);
   UINT mutagens_per_route = urandom(1, this->config->CONFIG_MUTAGENE_PER_ROUTE);
@@ -550,7 +561,7 @@ void Solver::mutatorGuidedChange(GA_chromosome *genome)
   }
 }
 
-void Solver::mutatorRandomRealocate(GA_chromosome *genome)
+void Solver::mutatorRandomRealocate(Chromosome *genome)
 {
   int vehicle = selectRoute(genome, this->task->number_of_vehicles);
   UINT mutagens_per_route = urandom(1, this->config->CONFIG_MUTAGENE_PER_ROUTE);

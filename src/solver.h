@@ -12,37 +12,40 @@ public:
   Task *task;
   Config *config;
 
-  GA_chromosome best; // najlepsi dosud nalezene reseni
+  Chromosome best; // best found solution
 
   Solver(Task* task, Config* config);
+  ~Solver();
 
   bool Solve();
 
 private:
-  void initialize(GA_chromosome *genome);
-  double fitness(GA_chromosome *genome, Task *task);
+  void initialize(Chromosome *genome);
+  double fitness(Chromosome *genome, Task *task);
   BOOL stop();
-  BOOL mutator(GA_chromosome *genome, UINT _pmut, int mutagens);
-  void gprint(GA_chromosome *genome);
-  void mutatorMoveBetweenVehicles(GA_chromosome *genome);
-  void mutatorChangeRouteSchedule(GA_chromosome *genome);
-  void mutatorGuidedChange(GA_chromosome *genome);
-  void mutatorRandomRealocate(GA_chromosome *genome);
+  BOOL mutator(Chromosome *genome, UINT _pmut, int mutagens);
+  void gprint(Chromosome *genome);
+  void mutatorMoveBetweenVehicles(Chromosome *genome);
+  void mutatorChangeRouteSchedule(Chromosome *genome);
+  void mutatorGuidedChange(Chromosome *genome);
+  void mutatorRandomRealocate(Chromosome *genome);
   int selectIndividByWeight();
 
-  double best_ever;   // fitness dosud nejlepsiho jedince
+  double best_ever;   // fitness of the best found individual
 
-  int generation; // pocitadlo generaci
-  GA_chromosome *population;
-  GA_chromosome *next_population;
-  // pracovni populace - parny pocet jedincov
-  GA_chromosome *pool1;
-  GA_chromosome *pool2;
+  int generation; // generation counter
+
+  // GA -----------
+  Chromosome *population;
+  Chromosome *next_population;
+  Chromosome *pool1;
+  Chromosome *pool2;
+  // --------------
 
   // ES -----------
-  GA_chromosome *pop;
-  GA_chromosome *next_pop;
-  GA_chromosome *offs;
+  Chromosome *pop;
+  Chromosome *next_pop;
+  Chromosome *offs;
   // --------------
 };
 
