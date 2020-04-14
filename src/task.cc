@@ -10,8 +10,8 @@ bool Task::FetchTask(std::string input_file)
     std::cout << "Unable to open file" << std::endl; 
     return false;
   } 
-
-  UINT line_index = 0;
+ 
+  int line_index = 0;
   std::string line;
   std::string partial;
   std::vector<int> vehicles;
@@ -27,7 +27,7 @@ bool Task::FetchTask(std::string input_file)
     }
     if (line_index == 0)
     {
-      for (UINT i = 0; i < tokens.size(); i++)
+      for (size_t i = 0; i < tokens.size(); i++)
         vehicles.push_back(tokens[i]);
     }
     else
@@ -40,7 +40,7 @@ bool Task::FetchTask(std::string input_file)
 
   file.close();
 
-  for (UINT i = 0; i < line_index - 1; i++)
+  for (int i = 0; i < line_index - 1; i++)
   {
     if (i == 0)
     {
@@ -56,15 +56,6 @@ bool Task::FetchTask(std::string input_file)
       demands.push_back(locations[locations[i][8]][3]);
       coords.push_back(std::make_pair(locations[i][1], locations[i][2]));
       coords.push_back(std::make_pair(locations[locations[i][8]][1], locations[locations[i][8]][2]));
-
-      // // Case if I decided to solve problem wit TW *******************
-      // open_times.push_back(locations[i][4]);
-      // open_times.push_back(locations[locations[i][8]][4]);
-      // close_times.push_back(locations[i][5]);
-      // close_times.push_back(locations[locations[i][8]][5]);
-      // service_times.push_back(locations[i][6]);
-      // service_times.push_back(locations[locations[i][8]][6]);
-      // // **************************************************************
     }
   }
 
@@ -72,29 +63,10 @@ bool Task::FetchTask(std::string input_file)
   matrix_order = sqrt(matrix.size());
   number_of_vehicles = vehicles[0];
   capacity_of_vehicles = vehicles[1];
-  max_route_duration = MAX_ROUTE_DURATION;
   return true;
 }
 
-str2int_errno str2int(int *out, char *s, UINT base)
-{
-  char *end;
-  if (s[0] == '\0' || isspace(s[0]))
-    return STR2INT_INCONVERTIBLE;
-  errno = 0;
-  long l = strtol(s, &end, base);
-  /* Both checks are needed because INT_MAX == LONG_MAX is possible. */
-  if (l > INT_MAX || (errno == ERANGE && l == LONG_MAX))
-    return STR2INT_OVERFLOW;
-  if (l < INT_MIN || (errno == ERANGE && l == LONG_MIN))
-    return STR2INT_UNDERFLOW;
-  if (*end != '\0')
-    return STR2INT_INCONVERTIBLE;
-  *out = l;
-  return STR2INT_SUCCESS;
-}
-
-std::vector<double> calculateDistanceMatrix(std::vector<int> locations_map, std::vector<std::vector<int>> locations)
+std::vector<double> Task::calculateDistanceMatrix(std::vector<int> locations_map, std::vector<std::vector<int>> locations)
 {
   std::vector<double> matrix;
 

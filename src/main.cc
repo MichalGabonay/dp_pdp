@@ -30,8 +30,8 @@ unsigned int rand_init()
 int main()
 {
     seed = rand_init();
-    // std::cout << seed << std::endl;
-    // seed = 179062014;
+    // // std::cout << seed << std::endl;
+    // seed = 4262504603;
     // srand(seed);
 
     std::chrono::_V2::system_clock::time_point time_beggining;
@@ -62,7 +62,7 @@ int main()
     if (config.CONFIG_RESULT_SUMMARY)
     {
         printf("%d;summary;%f;%f;%" PRId64 ";%u\n", getpid(), solver.best.fitness, solver.best.cost, duration, seed);
-        // printf("%f\n", solver.best.fitness);
+        printf("%d;config;%s;%d;%d;%d;%d;%d\n", getpid(), config.INPUT_FILE.c_str(), config.CONFIG_GENERATIONS, config.CONFIG_LAMBDA, config.CONFIG_MI, config.CONFIG_MUTAGENE_PER_ROUTE, config.CONFIG_MUTAGENES);
     }
     
     return 0;

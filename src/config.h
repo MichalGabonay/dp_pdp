@@ -8,10 +8,11 @@
 class Config
 {
 public:
-  // configuration data
   bool CONFIG_DEBUG;
   bool CONFIG_GENERATIONS_PRINT;
   bool CONFIG_RESULT_SUMMARY;
+  bool CONFIG_USE_GUIDED_MUTS;
+  bool CONFIG_USE_CENTROIDS;
   bool CONFIG_ES_PLUS;
   bool CONFIG_ES_ELITISM;
   int CONFIG_PMUT; 
@@ -22,6 +23,7 @@ public:
   int CONFIG_MI;
   int CONFIG_LAMBDA;
   int CONFIG_GENERATIONS;
+  int MAX_ROUTE_DURATION;
   std::string CONFIG_EVOLUTION_TYPE;
   std::string INPUT_FILE;
   unsigned int unit;
