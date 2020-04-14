@@ -29,10 +29,10 @@ unsigned int rand_init()
 
 int main()
 {
-    seed = rand_init();
+    // seed = rand_init();
     // // std::cout << seed << std::endl;
-    // seed = 4262504603;
-    // srand(seed);
+    seed = 2467793798;
+    srand(seed);
 
     std::chrono::_V2::system_clock::time_point time_beggining;
     std::chrono::_V2::system_clock::time_point time_end;

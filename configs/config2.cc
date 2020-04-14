@@ -14,6 +14,9 @@ Config::Config()
   CONFIG_TOUR = 3;
   CONFIG_POPSIZE = 20;
 
+  CONFIG_USE_GUIDED_MUTS = true;
+  CONFIG_USE_CENTROIDS = true;
+
   CONFIG_EVOLUTION_TYPE = "ES"; // ES or GA
   CONFIG_ES_PLUS = false;
 
