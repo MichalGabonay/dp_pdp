@@ -2,8 +2,8 @@
 
 Config::Config()
 {
-  INPUT_FILE = "dataset/LR2_2_1.txt";
-  MAX_ROUTE_DURATION = 300;
+  INPUT_FILE = "dataset/LC1_2_1.txt";
+  MAX_ROUTE_DURATION = 250;
 
   CONFIG_DEBUG = false;
   CONFIG_GENERATIONS_PRINT = true;
@@ -15,7 +15,7 @@ Config::Config()
   CONFIG_POPSIZE = 30;
 
   CONFIG_USE_GUIDED_MUTS = true;
-  CONFIG_USE_CENTROIDS = false;
+  CONFIG_USE_CENTROIDS = true;
 
   CONFIG_EVOLUTION_TYPE = "ES"; // ES or GA
   CONFIG_ES_PLUS = true;
