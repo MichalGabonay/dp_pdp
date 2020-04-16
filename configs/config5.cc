@@ -2,7 +2,7 @@
 
 Config::Config()
 {
-  INPUT_FILE = "dataset/LRC1_2_2.txt";
+  INPUT_FILE = "dataset/LR2_2_2.txt";
   MAX_ROUTE_DURATION = 300;
 
   CONFIG_DEBUG = false;
