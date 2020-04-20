@@ -27,7 +27,7 @@ public:
   bool Solve();
 
 private:
-  void initialize(Individual *genome);
+  bool initialize(Individual *genome);
   double fitness(Individual *genome, Task *task);
   BOOL stop();
   BOOL mutator(Individual *genome, UINT _pmut, int mutagens);

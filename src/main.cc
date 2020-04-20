@@ -52,6 +52,8 @@ int main()
     if (!solver.Solve())
     {
         std::cout << "Failed to solve the problem." << std::endl;
+        printf("%d;error;'Failed to solve the problem.'\n", getpid());
+        printf("%d;config;%s;%d;%d;%d;%d;%d;%d;%d;%d;%s\n", getpid(), config.INPUT_FILE.c_str(), config.CONFIG_GENERATIONS, config.CONFIG_LAMBDA, config.CONFIG_MI, config.CONFIG_MUTAGENE_PER_ROUTE, config.CONFIG_MUTAGENES, config.CONFIG_USE_GUIDED_MUTS, config.CONFIG_USE_CENTROIDS, config.MAX_ROUTE_DURATION, config.CONFIG_EVOLUTION_TYPE.c_str());
         return 1;
     }
 

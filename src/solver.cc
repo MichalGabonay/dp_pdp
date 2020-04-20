@@ -36,7 +36,9 @@ bool Solver::Solve()
 
     for (int i = 0; i < config->CONFIG_MI; i++)
     {
-      initialize(&pop[i]);
+      if(!initialize(&pop[i])){
+        return false;
+      }
       pop[i].evaluate = 1;
     }
 
@@ -114,7 +116,9 @@ bool Solver::Solve()
 
     for (int i = 0; i < config->CONFIG_POPSIZE; i++)
     {
-      initialize(&pool1[i]);
+      if(!initialize(&pool1[i])){
+        return false;
+      }
       pool1[i].evaluate = 1;
     }
     
@@ -214,7 +218,7 @@ void Solver::gprint(Individual *genome)
 }
 
 // random initialization of population
-void Solver::initialize(Individual *genome)
+bool Solver::initialize(Individual *genome)
 {
   for (int i = 0; i < this->task->number_of_vehicles; i++)
   {
@@ -277,7 +281,7 @@ void Solver::initialize(Individual *genome)
     if (succes_insert == false)
     {
       std::cout << "Unsuccesful inicialization, try bigger max route duration." << std::endl;
-      exit(1);
+      return false;
     }
   }
   for (int i = 0; i < this->task->number_of_vehicles; i++)
@@ -298,6 +302,7 @@ void Solver::initialize(Individual *genome)
   //   printRoute(genome->routes[vehicle], vehicle);
   //   inserCustomerToRoute(genome, vehicle, i, this->task);
   // }
+  return true;
 }
 
 // test na zastaveni evoluce
