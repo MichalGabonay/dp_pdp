@@ -60,10 +60,19 @@ int main()
     time_end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(time_end - time_beggining).count();
     duration = duration / 1000000; // in seconds
+
+    UINT used_vehicles = 0;
+    for (int i = 0; i < task.number_of_vehicles; i++)
+    {
+        if (solver.best.routes[i].route_length > 2)
+        {
+            used_vehicles++;
+        }
+    }
     
     if (config.CONFIG_RESULT_SUMMARY)
     {
-        printf("%d;summary;%f;%f;%" PRId64 ";%u\n", getpid(), solver.best.fitness, solver.best.cost, duration, seed);
+        printf("%d;summary;%f;%f;%" PRId64 ";%u;%d\n", getpid(), solver.best.fitness, solver.best.cost, duration, seed, used_vehicles);
         printf("%d;config;%s;%d;%d;%d;%d;%d;%d;%d;%d;%s\n", getpid(), config.INPUT_FILE.c_str(), config.CONFIG_GENERATIONS, config.CONFIG_LAMBDA, config.CONFIG_MI, config.CONFIG_MUTAGENE_PER_ROUTE, config.CONFIG_MUTAGENES, config.CONFIG_USE_GUIDED_MUTS, config.CONFIG_USE_CENTROIDS, config.MAX_ROUTE_DURATION, config.CONFIG_EVOLUTION_TYPE.c_str());
     }
     

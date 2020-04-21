@@ -2,7 +2,7 @@
 
 Config::Config()
 {
-  INPUT_FILE = "dataset/600/LR2_6_1.txt";
+  INPUT_FILE = "dataset/400/LR2_4_1.txt";
   MAX_ROUTE_DURATION = 500;
 
   CONFIG_DEBUG = true;
@@ -11,12 +11,11 @@ Config::Config()
 
   unit = 100;
   CONFIG_PMUT = 80;
-  CONFIG_TOUR = 3;
-  CONFIG_POPSIZE = 20;
+  CONFIG_TOUR = 4;
+  CONFIG_POPSIZE = 30;
 
   CONFIG_USE_GUIDED_MUTS = true;
   CONFIG_USE_CENTROIDS = true;
-
 
   CONFIG_EVOLUTION_TYPE = "ES"; // ES or GA
   CONFIG_ES_PLUS = true;
@@ -25,7 +24,7 @@ Config::Config()
   CONFIG_LAMBDA = 30;
 
   CONFIG_ES_ELITISM = false;
-  CONFIG_MI = 3;
-  CONFIG_MUTAGENE_PER_ROUTE = 4;
-  CONFIG_MUTAGENES = 4;
+  CONFIG_MI = 4;
+  CONFIG_MUTAGENE_PER_ROUTE = 5;
+  CONFIG_MUTAGENES = 5;
 }
