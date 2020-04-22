@@ -2,8 +2,8 @@
 
 Config::Config()
 {
-  INPUT_FILE = "dataset/200/LR1_2_1.txt";
-  MAX_ROUTE_DURATION = 400;
+  INPUT_FILE = "dataset/400/LR1_4_1.txt";
+  MAX_ROUTE_DURATION = 500;
 
   CONFIG_DEBUG = false;
   CONFIG_GENERATIONS_PRINT = true;
