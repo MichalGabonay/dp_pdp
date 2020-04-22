@@ -2,7 +2,7 @@
 
 Config::Config()
 {
-  INPUT_FILE = "dataset/600/LC1_6_1.txt";
+  INPUT_FILE = "dataset/200/LC1_2_1.txt";
   MAX_ROUTE_DURATION = 300;
 
   CONFIG_DEBUG = false;
@@ -20,7 +20,7 @@ Config::Config()
   CONFIG_EVOLUTION_TYPE = "ES"; // ES or GA
   CONFIG_ES_PLUS = true;
 
-  CONFIG_GENERATIONS = 180000;
+  CONFIG_GENERATIONS = 150000;
   CONFIG_LAMBDA = 30;
 
   CONFIG_ES_ELITISM = false;
