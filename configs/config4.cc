@@ -3,7 +3,7 @@
 Config::Config()
 {
   INPUT_FILE = "dataset/800/LRC1_8_1.txt";
-  MAX_ROUTE_DURATION = 600;
+  MAX_ROUTE_DURATION = 800;
 
   CONFIG_DEBUG = false;
   CONFIG_GENERATIONS_PRINT = true;

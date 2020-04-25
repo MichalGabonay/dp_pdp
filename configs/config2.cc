@@ -2,7 +2,7 @@
 
 Config::Config()
 {
-  INPUT_FILE = "dataset/800/LR1_8_1.txt";
+  INPUT_FILE = "dataset/800/LRC1_8_1.txt";
   MAX_ROUTE_DURATION = 700;
 
   CONFIG_DEBUG = false;
@@ -24,7 +24,7 @@ Config::Config()
   CONFIG_LAMBDA = 30;
 
   CONFIG_ES_ELITISM = false;
-  CONFIG_MI = 2;
-  CONFIG_MUTAGENE_PER_ROUTE = 3;
-  CONFIG_MUTAGENES = 3;
+  CONFIG_MI = 3;
+  CONFIG_MUTAGENE_PER_ROUTE = 4;
+  CONFIG_MUTAGENES = 5;
 }
