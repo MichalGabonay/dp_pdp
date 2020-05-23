@@ -12,7 +12,6 @@
 #include <unistd.h>
 #include <algorithm>
 
-
 class Solver
 {
 public:
@@ -21,7 +20,7 @@ public:
 
   Individual best; // best found solution
 
-  Solver(Task* task, Config* config);
+  Solver(Task *task, Config *config);
   ~Solver();
 
   bool Solve();
@@ -37,9 +36,10 @@ private:
   void mutatorGuidedChange(Individual *genome);
   void mutatorGuidedChange2(Individual *genome);
   void mutatorRandomRealocate(Individual *genome);
+  void recalculateWholeRoute(Individual *genome);
   int selectIndividByWeight();
 
-  double best_ever;   // fitness of the best found individual
+  double best_ever; // fitness of the best found individual
 
   int generation; // generation counter
 

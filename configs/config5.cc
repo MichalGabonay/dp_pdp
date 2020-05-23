@@ -10,7 +10,7 @@ Config::Config()
   CONFIG_RESULT_SUMMARY = true;
 
   unit = 100;
-  CONFIG_PMUT = 80;
+  CONFIG_PMUT = 50;
   CONFIG_TOUR = 4;
   CONFIG_POPSIZE = 30;
 

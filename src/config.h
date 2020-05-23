@@ -15,7 +15,7 @@ public:
   bool CONFIG_USE_CENTROIDS;
   bool CONFIG_ES_PLUS;
   bool CONFIG_ES_ELITISM;
-  int CONFIG_PMUT; 
+  unsigned int CONFIG_PMUT;
   int CONFIG_MUTAGENES;
   int CONFIG_MUTAGENE_PER_ROUTE;
   int CONFIG_TOUR;
