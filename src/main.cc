@@ -73,7 +73,7 @@ int main()
         if (route.route_length > 2)
         {
             std::ostringstream os;
-            os << getpid() << ";vehicles;";
+            os << getpid() << ";vehicles;" << route.distance << ";";
             // os << this->best_ever;
             for (size_t j = 0; j < route.route_length; j++)
             {

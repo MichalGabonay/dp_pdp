@@ -466,8 +466,9 @@ BOOL Solver::mutator(Individual *genome, UINT _pmut, int mutagens)
 
 void Solver::mutatorMoveBetweenVehicles(Individual *genome)
 {
-  UINT value, pickup, delivery, index_1, index_2, vehicle_1, vehicle_2, v_2_size;
+  UINT value, pickup, delivery, index_1, index_2, vehicle_1, vehicle_2;
   UINT v_1_size = 0;
+  UINT v_2_size = 0;
 
   while (v_1_size <= 2)
   {
@@ -558,7 +559,7 @@ void Solver::mutatorMoveBetweenVehicles(Individual *genome)
     genome->recalculateRoute(vehicle_1, this->task);
   }
 
-  if (urandom(0, 100) <= 50 && v_2_size > 4) // mutace s pravdepodobnosti _pmut
+  if (urandom(0, 100) <= this->config->CONFIG_PMUT && v_2_size > 4) // mutace s pravdepodobnosti _pmut
   {
     if (this->config->CONFIG_USE_GUIDED_MUTS) // guided mutations
     {
