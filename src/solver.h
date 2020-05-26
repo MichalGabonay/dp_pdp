@@ -35,8 +35,6 @@ private:
   void mutatorChangeRouteSchedule(Individual *genome);
   void mutatorGuidedChange(Individual *genome);
   void mutatorGuidedChange2(Individual *genome);
-  void mutatorRandomRealocate(Individual *genome);
-  void recalculateWholeRoute(Individual *genome);
   int selectIndividByWeight();
 
   double best_ever; // fitness of the best found individual

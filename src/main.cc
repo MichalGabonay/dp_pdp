@@ -65,42 +65,41 @@ int main()
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(time_end - time_beggining).count();
     duration = duration / 1000000; // in seconds
 
-    UINT used_vehicles = 0;
-    UINT over_limit = 0;
-    for (int i = 0; i < task.number_of_vehicles; i++)
-    {
-        Route route = solver.best.routes[i];
-        if (route.route_length > 2)
-        {
-            std::ostringstream os;
-            os << getpid() << ";vehicles;" << route.distance << ";";
-            // os << this->best_ever;
-            for (size_t j = 0; j < route.route_length; j++)
-            {
-                if (j != route.route_length - 1)
-                {
-                    os << task.coords[route.locations[j]].first << "," << task.coords[route.locations[j]].second << ";";
-                }
-                else
-                {
-                    os << task.coords[route.locations[j]].first << "," << task.coords[route.locations[j]].second;
-                }
-            }
-
-            std::string gen_summary = os.str();
-            printf("%s\n", gen_summary.c_str());
-
-            used_vehicles++;
-            double distance = solver.best.routes[i].distance;
-            if (distance > config.MAX_ROUTE_DURATION)
-            {
-                over_limit++;
-            }
-        }
-    }
-
     if (config.CONFIG_RESULT_SUMMARY)
     {
+        UINT used_vehicles = 0;
+        UINT over_limit = 0;
+        for (int i = 0; i < task.number_of_vehicles; i++)
+        {
+            Route route = solver.best.routes[i];
+            if (route.route_length > 2)
+            {
+                std::ostringstream os;
+                os << getpid() << ";vehicles;" << route.distance << ";";
+                // os << this->best_ever;
+                for (size_t j = 0; j < route.route_length; j++)
+                {
+                    if (j != route.route_length - 1)
+                    {
+                        os << task.coords[route.locations[j]].first << "," << task.coords[route.locations[j]].second << ";";
+                    }
+                    else
+                    {
+                        os << task.coords[route.locations[j]].first << "," << task.coords[route.locations[j]].second;
+                    }
+                }
+
+                std::string gen_summary = os.str();
+                printf("%s\n", gen_summary.c_str());
+
+                used_vehicles++;
+                double distance = solver.best.routes[i].distance;
+                if (distance > config.MAX_ROUTE_DURATION)
+                {
+                    over_limit++;
+                }
+            }
+        }
         printf("%d;summary;%f;%f;%" PRId64 ";%u;%d;%d\n", getpid(), solver.best.fitness, solver.best.cost, duration, seed, used_vehicles, over_limit);
         printf("%d;config;%s;%d;%d;%d;%d;%d;%d;%d;%d;%s\n", getpid(), config.INPUT_FILE.c_str(), config.CONFIG_GENERATIONS, config.CONFIG_LAMBDA, config.CONFIG_MI, config.CONFIG_MUTAGENE_PER_ROUTE, config.CONFIG_MUTAGENES, config.CONFIG_USE_GUIDED_MUTS, config.CONFIG_USE_CENTROIDS, config.MAX_ROUTE_DURATION, config.CONFIG_EVOLUTION_TYPE.c_str());
     }

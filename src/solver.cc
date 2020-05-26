@@ -446,15 +446,8 @@ BOOL Solver::mutator(Individual *genome, UINT _pmut, int mutagens)
         Solver::mutatorChangeRouteSchedule(genome);
         break;
       case 3:
-        // if (urandom(0, this->config->unit) <= this->config->CONFIG_PMUT)
-        Solver::recalculateWholeRoute(genome);
-        // if (this->config->CONFIG_USE_GUIDED_MUTS) // guided mutations
-        // {
-        //   Solver::mutatorGuidedChange(genome);
-        // }
+        Solver::mutatorGuidedChange(genome);
         break;
-      // case 4:
-      //   break;
       default:
         break;
       }
@@ -593,31 +586,6 @@ void Solver::mutatorGuidedChange(Individual *genome)
   for (UINT i = 0; i < mutagens_per_route; i++)
   {
     int pickup = genome->routes[vehicle].selectCustomerByCost(genome->map_route_position);
-    genome->realocateCustomerInRoute(vehicle, pickup, this->task);
-  }
-}
-
-void Solver::recalculateWholeRoute(Individual *genome)
-{
-  int vehicle = genome->selectRoute(this->task->number_of_vehicles);
-  UINT route_size = genome->routes[vehicle].route_length;
-  for (UINT i = 0; i < route_size; i++)
-  {
-    if (i > 0 && i < route_size - 1 && genome->routes[vehicle].locations[i] % 2 == 1)
-    {
-      int pickup = genome->routes[vehicle].locations[i];
-      genome->realocateCustomerInRoute(vehicle, pickup, this->task);
-    }
-  }
-}
-
-void Solver::mutatorRandomRealocate(Individual *genome)
-{
-  int vehicle = genome->selectRoute(this->task->number_of_vehicles);
-  UINT mutagens_per_route = urandom(1, this->config->CONFIG_MUTAGENE_PER_ROUTE);
-  for (UINT i = 0; i < mutagens_per_route; i++)
-  {
-    int pickup = genome->routes[vehicle].selectRandomCustomer();
     genome->realocateCustomerInRoute(vehicle, pickup, this->task);
   }
 }
