@@ -20,13 +20,13 @@ public:
   int number_of_vehicles;
   int capacity_of_vehicles;
   std::vector<int> demands;
-  std::vector<std::pair<int, int> > coords;
+  std::vector<std::pair<int, int>> coords;
   std::vector<int> locations_map;
   std::vector<std::vector<int>> locations;
 
   Task();
   bool FetchTask(std::string input_file);
-  std::vector<double> calculateDistanceMatrix(std::vector<int> locations_map, std::vector<std::vector<int>> locations); 
+  std::vector<double> calculateDistanceMatrix(std::vector<int> locations_map, std::vector<std::vector<int>> locations);
 };
 
 #endif

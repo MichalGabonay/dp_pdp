@@ -224,7 +224,8 @@ void Solver::gprint(Individual *genome)
         }
       }
       printf("\n");
-      printf("cost: %d  --  duration: %f  --  distance: %d \n\n", genome->routes[i].cost, genome->routes[i].duration, genome->routes[i].distance);
+      printf("distance: %f \n\n", genome->routes[i].duration);
+      // printf("cost: %d  --  duration: %f  --  distance: %d \n\n", genome->routes[i].cost, genome->routes[i].duration, genome->routes[i].distance);
       used_vehicles++;
     }
   }
@@ -497,12 +498,6 @@ void Solver::mutatorMoveBetweenVehicles(Individual *genome)
     { // random mutations
       index_1 = urandom(1, v_1_size - 2);
       value = genome->routes[vehicle_1].locations[index_1];
-
-      vehicle_2 = urandom(0, this->task->number_of_vehicles - 1);
-      if (vehicle_1 == vehicle_2)
-      {
-        vehicle_2 = (vehicle_1 + 1) % this->task->number_of_vehicles;
-      }
     }
 
     if (value % 2 == 0)

@@ -6,3 +6,6 @@ vrp
 /*.txt
 /*.csv
 MakefileOLD
+/objs/
+/objs2/
+TODO.md
